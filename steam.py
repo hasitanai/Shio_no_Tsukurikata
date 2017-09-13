@@ -108,7 +108,7 @@ class local_res_toot(StreamListener): #ここではLTLを監視する継承ク�
         print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
         print("   ")
         g_sta = status
-                fav01()
+        fav01()
         res01()
         res02() #ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
         res03() #もっとここは上手くスマートに出来ると思うけどゴリ押し（はぁと
