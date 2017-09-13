@@ -108,10 +108,10 @@ class local_res_toot(StreamListener): #ここではLTLを監視する継承ク�
         print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
         print("   ")
         g_sta = status
+                fav01()
         res01()
         res02() #ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
         res03() #もっとここは上手くスマートに出来ると思うけどゴリ押し（はぁと
-        fav01()
         pass
 
     def on_delete(self, status_id): #トゥー消し警察の監視場になります。
@@ -234,7 +234,7 @@ def fav01(): #自分の名前があったらニコブーして、神崎があっ
         b = threading.Timer(2 ,reb_now)
         b.start()
 
-    if re.compile("神崎").search(status['content']):
+    if re.compile("神[埼崎]|knzk|(100|5000兆)db").search(status['content']):
         n_sta = status
         v = threading.Timer(1 ,fav_now)
         v.start()
@@ -259,7 +259,7 @@ def toot_res(): #Postする内容が決まったらtoot関数に渡します。�
     if learn_toot != post_toot:
         learn_toot = post_toot
         toot()
-        t=threading.Timer(15,time_res)
+        t=threading.Timer(10,time_res)
         t.start()
         timer_toot = 1
         z=threading.Timer(180,t_forget) #クールタイム伸ばした。
