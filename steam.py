@@ -29,7 +29,7 @@ warnings.simplefilter("ignore", UnicodeWarning)
 自分はこちらの記事を参照しましたのでアクセストークン各自で取ってね(*'ω'*)
 https://routecompass.net/mastodon/
 """
-url_ins = open("instance.txt").read()
+url_ins = open("instance.txt").read() #instanceのアドレスお願いね　例：https://knzk.me 
 
 mastodon = Mastodon(
         client_id="cred.txt",
@@ -135,7 +135,7 @@ def res01(): #お返事関数シンプル版。
     status = g_sta
     in_reply_to_id = None
     if timer_toot == 0:
-        f = open('reply.csv', 'r')
+        f = codecs.open('reply.csv', 'r', "UTF-8", "ignore")
         dataReader = csv.reader(f)
         for row in dataReader:
             if re.compile(row[2]).search(status['content']):
@@ -160,7 +160,7 @@ def res02(): #該当するセリフからランダムtootが選ばれてトゥ�
     status = g_sta
     in_reply_to_id = None
     if timer_toot == 0:
-        f = open('reply_random.csv', 'r')
+        f = codecs.open('reply_random.csv', 'r', "UTF-8", "ignore")
         dataReader = csv.reader(f)
         for row in dataReader:
             if re.compile(row[2]).search(re.sub("<p>|</p>","",status['content'].translate(non_bmp_map))):
@@ -193,7 +193,7 @@ def res03(): #該当する文字があるとメディアをアップロードし
     status = g_sta
     in_reply_to_id = None
     if timer_toot == 0:
-        f = open('reply_media.csv', 'r')
+        f = codecs.open('reply_media.csv', 'r', "UTF-8", "ignore")
         dataReader = csv.reader(f)
         for row in dataReader:
             if re.compile(row[2]).search(re.sub("<p>|</p>","",status['content'].translate(non_bmp_map))):
@@ -262,7 +262,7 @@ def toot_res(): #Postする内容が決まったらtoot関数に渡します。�
         t=threading.Timer(15,time_res)
         t.start()
         timer_toot = 1
-        z=threading.Timer(60,t_forget)
+        z=threading.Timer(180,t_forget) #クールタイム伸ばした。
         z.start()
 
 
@@ -290,11 +290,20 @@ if __name__ == '__main__': #ファイルから直接開いたら動くよ！
     learn_toot = ""
     in_reply_to_id = None
     media_files = None
-    u = threading.Timer(0 ,t_local)
-    l = threading.Timer(0 ,t_user)
-    u.start()
-    l.start()
-
+    try:    
+        u = threading.Timer(0 ,t_local)
+        u.start()
+    except:
+        u = threading.Timer(10 ,t_local)
+        u.start()
+    try:
+        l = threading.Timer(0 ,t_user)
+        l.start()
+    except:
+        l = threading.Timer(10 ,t_user)
+        l.start()
+    #Try作戦でなんとかなるかな？（すっとぼけ）
+    
 """
 「mastodon.」メソッドを下記の関数によって「ホーム」「連合」「ローカル」「指定のハッシュタグ」が選択できます
  user_stream, public_stream, local_stream, hashtag_stream(self, tag, listener, async=False)
