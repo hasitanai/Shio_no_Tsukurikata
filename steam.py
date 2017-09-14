@@ -11,6 +11,7 @@ import json
 import csv
 import codecs
 import random
+from datetime import datetime as dt
 
 """
 上記必要なものはpipしていってね！！！
@@ -37,6 +38,8 @@ mastodon = Mastodon(
         api_base_url = url_ins) #インスタンス
 
 
+api_Bot = open("api_Bot.txt").read()
+
 class user_res_toot(StreamListener): #ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
     def on_notification(self, notification): #通知を監視します。
         print("===●user_on_notification●===")
@@ -60,6 +63,7 @@ class user_res_toot(StreamListener): #ホームでフォローした人と通知
                 m = mentions[0]
                 print(m["acct"])
                 if m["acct"] == "1":
+                    global api_Bot
                     global post_toot
                     global g_vis
                     global in_reply_to_id
@@ -67,7 +71,7 @@ class user_res_toot(StreamListener): #ホームでフォローした人と通知
                     s = requests.session()
                     mes = (re.sub("<span class(.*)/a></span>|<p>|</p>", "", str(content)))
                     params = {
-                        'key': 'Sample', #登録するとAPIKeyがもらえますのでここに入れます。
+                        'key': api_Bot, #登録するとAPIKeyがもらえますのでここに入れます。
                         'message': mes,
                     }
                     r =  s.post(url, params=params)
@@ -108,10 +112,15 @@ class local_res_toot(StreamListener): #ここではLTLを監視する継承ク�
         print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
         print("   ")
         g_sta = status
+        check01()
         fav01()
         res01()
         res02() #ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
         res03() #もっとここは上手くスマートに出来ると思うけどゴリ押し（はぁと
+        res04()
+        res05()
+        check02()
+        check03()
         pass
 
     def on_delete(self, status_id): #トゥー消し警察の監視場になります。
@@ -171,14 +180,7 @@ def res02(): #該当するセリフからランダムtootが選ばれてトゥ�
                         sleep(int(row[0]))
                     else:
                         sleep(4)
-                    f = codecs.open('res\\'+row[1]+'.txt', 'r', 'utf-8')
-                    l = []
-                    for x in f:
-                        l.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                    f.close()
-                    m = len(l)
-                    s =random.randint(1,m)
-                    post_toot = (l[s-1])
+                    post_toot = rand_w('res\\'+row[1]+'.txt')
                     toot_res()
                 return
 
@@ -204,14 +206,7 @@ def res03(): #該当する文字があるとメディアをアップロードし
                         sleep(int(row[0]))
                     else:
                         sleep(4)
-                    f = codecs.open('res\\'+row[1]+'.txt', 'r', 'utf-8')
-                    l = []
-                    for x in f:
-                        l.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                    f.close()
-                    m = len(l)
-                    s =random.randint(1,m)
-                    post_toot = (l[s-1])
+                    post_toot = rand_w('res\\'+row[1]+'.txt')
                     f = codecs.open('res_med\\'+row[3]+'.txt', 'r', 'utf-8')
                     l = []
                     for x in f:
@@ -223,6 +218,79 @@ def res03(): #該当する文字があるとメディアをアップロードし
                     toot_res()
                 return
 
+def res04(): #おはよう機能
+        global timer_toot
+        global g_sta
+        global post_toot
+        global g_vis
+        status = g_sta
+        account = status["account"]
+        if account["acct"] != "1": #一人遊びで挨拶しないようにっするための処置
+            try:
+                f = codecs.open('oyasumi\\'+account["acct"]+'.txt', 'r', 'UTF-8') 
+                zzz = f.read()
+                f.close() # ファイルを閉じる
+                if zzz == "good_night":
+                    print("◇Hit")
+                    post_toot = account['display_name']+"さん\n"+rand_w('time\\oha.txt')
+                    g_vis = "public"
+                    t1 = threading.Timer(8 ,toot)
+                    t1.start()
+                elif zzz == "active":
+                    f = codecs.open('at_time\\'+account["acct"]+'.txt', 'r', 'UTF-8')
+                    nstr = f.read()
+                    f.close
+                    tstr = re.sub("\....Z","",nstr)
+                    last_time = dt.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                    nstr = status['created_at']
+                    tstr = re.sub("\....Z","",nstr)
+                    now_time = dt.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                    delta = now_time - last_time
+                    if delta >= 10800:
+                        if dt.hour(now_time) in range(3,9):
+                            to_r = rand_w('time\\kon.txt')
+                        elif dt.hour(now_time) in range(9,20):
+                            to_r = rand_w('time\\kob.txt')
+                        else:
+                            to_r = rand_w('time\\oha.txt')
+                        print("◇Hit")
+                        post_toot = account['display_name']+"さん\n"+to_r
+                        g_vis = "public"
+                        t1 = threading.Timer(3 ,toot)
+                        t1.start()
+                else:
+                    print("◇Hit")
+                    post_toot = account['display_name']+"さん\n"+"はじめまして、よろしくお願いいたします。"
+                    g_vis = "public"
+                    t1 = threading.Timer(3 ,toot)
+                    t1.start()
+            except:        
+                f = codecs.open('oyasumi\\'+account["acct"]+'.txt', 'w', 'UTF-8') 
+                f.write("active") 
+                f.close()
+
+                
+def res05(): #おやすみ機能
+        global timer_toot
+        global g_sta
+        global post_toot
+        global g_vis
+        status = g_sta
+        account = status["account"]
+        if account["acct"] != "1": #一人遊びで挨拶しないようにっするための処置
+            if re.compile("寝マストドン|寝ます|みんな(.*)おやすみ|おやすみ(.*)みんな").search(status['content']):
+                print("◇Hit")
+                post_toot = account['display_name']+"さん\n"+rand_w('time\\oya.txt')
+                g_vis = "public"
+                t1 = threading.Timer(3 ,toot)
+                t1.start()
+            elif re.compile("こおり(.*)おやすみ").search(status['content']):
+                print("◇Hit")
+                post_toot = account['display_name']+"さん\n"+rand_w('time\\oya.txt')
+                g_vis = "public"
+                t1 = threading.Timer(3 ,toot)
+                t1.start()
+                    
 def fav01(): #自分の名前があったらニコブーして、神崎があったらニコります。
     global g_sta
     global n_sta
@@ -265,6 +333,47 @@ def toot_res(): #Postする内容が決まったらtoot関数に渡します。�
         z=threading.Timer(180,t_forget) #クールタイム伸ばした。
         z.start()
 
+def check01(): # アカウント情報の更新
+    global g_sta
+    status = g_sta
+    account = status["account"]
+    created_at = status['created_at']
+    non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+    f = codecs.open('acct\\'+account["acct"]+'.txt', 'w', 'UTF-8') 
+    f.write(str(status["account"]).translate(non_bmp_map)) 
+    f.close()
+
+def check02(): #最後にトゥートした時間の記憶
+    global g_sta
+    status = g_sta
+    account = status["account"]
+    created_at = status['created_at']
+    f = codecs.open('at_time\\'+account["acct"]+'.txt', 'w', 'UTF-8') 
+    f.write(str(status["created_at"])) # \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z
+    f.close() # ファイルを閉じる
+    f = codecs.open('oyasumi\\'+account["acct"]+'.txt', 'w', 'UTF-8') 
+    f.write("active") # 
+    f.close() # ファイルを閉じる
+
+def check03(): #お休みした人を記憶する
+    global g_sta
+    status = g_sta
+    account = status["account"]
+    if re.compile("寝マストドン|寝ます|みんな(.*)おやすみ|おやすみ(.*)みんな").search(re.sub("<p>|</p>","",status['content'])):
+        f = codecs.open('oyasumi\\'+account["acct"]+'.txt', 'w', 'UTF-8') 
+        f.write("good_night") # 
+        f.close() # ファイルを閉じる
+        print("◇寝る人を記憶しました")
+
+def rand_w(txt_deta):
+    f = codecs.open(txt_deta, 'r', 'utf-8')
+    l = []
+    for x in f:
+        l.append(x.rstrip("\r\n").replace('\\n', '\n'))
+    f.close()
+    m = len(l)
+    s = random.randint(1,m)
+    return l[s-1]
 
 def time_res(): #クールタイムが終わる処理。
     global timer_toot
