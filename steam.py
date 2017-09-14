@@ -11,7 +11,7 @@ import json
 import csv
 import codecs
 import random
-from datetime import datetime as dt
+from datetime import datetime
 
 """
 上記必要なものはpipしていってね！！！
@@ -225,7 +225,7 @@ def res04(): #おはよう機能
         global g_vis
         status = g_sta
         account = status["account"]
-        if account["acct"] != "1": #一人遊びで挨拶しないようにっするための処置
+        if account["acct"] != "1": #一人遊びで挨拶しないようにするための処置
             try:
                 f = codecs.open('oyasumi\\'+account["acct"]+'.txt', 'r', 'UTF-8') 
                 zzz = f.read()
@@ -241,15 +241,15 @@ def res04(): #おはよう機能
                     nstr = f.read()
                     f.close
                     tstr = re.sub("\....Z","",nstr)
-                    last_time = dt.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                    last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     nstr = status['created_at']
                     tstr = re.sub("\....Z","",nstr)
-                    now_time = dt.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                    now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     delta = now_time - last_time
                     if delta >= 10800:
-                        if dt.hour(now_time) in range(3,9):
+                        if now_time.hour in range(3,9):
                             to_r = rand_w('time\\kon.txt')
-                        elif dt.hour(now_time) in range(9,20):
+                        elif now_time.hour in range(9,20):
                             to_r = rand_w('time\\kob.txt')
                         else:
                             to_r = rand_w('time\\oha.txt')
