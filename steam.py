@@ -64,9 +64,6 @@ class user_res_toot(StreamListener): #ホームでフォローした人と通知
                 print(m["acct"])
                 if m["acct"] == "1":
                     global api_Bot
-                    global post_toot
-                    global g_vis
-                    global in_reply_to_id
                     url = "https://chatbot-api.userlocal.jp/api/chat" #人工知能APIサービス登録してお借りしてます。
                     s = requests.session()
                     mes = (re.sub("<span class(.*)/a></span>|<p>|</p>", "", str(content)))
@@ -77,9 +74,10 @@ class user_res_toot(StreamListener): #ホームでフォローした人と通知
                     r =  s.post(url, params=params)
                     ans = json.loads(r.text)
                     post_toot = "@"+str(account["acct"])+" "+ans["result"]
-                    g_vis = "unlisted"
-                    in_reply_to_id = int(status["id"])
-                    t = threading.Timer(5 ,toot)
+                    g_vis = status["visibility"]
+                    in_reply_to_id = int(status["in_reply_to_id"])
+                    in_reply_to_id += int(status["id"])
+                    t = threading.Timer(5 ,toot,[post_toot,g_vis,in_reply_to_id,None])
                     t.start()
 
         elif notification["type"] == "favourite": #通知がニコられたときです。
@@ -128,19 +126,14 @@ class local_res_toot(StreamListener): #ここではLTLを監視する継承ク�
         print(status_id)
         pass
 
-def toot(): # トゥートする関数処理だよ！
-    global post_toot
-    global in_reply_to_id
-    global media_files
+def toot(post_toot,g_vis,in_reply_to_id=None,media_files=None): # トゥートする関数処理だよ！
     print(in_reply_to_id)
     mastodon.status_post(status=post_toot, visibility=g_vis, in_reply_to_id=in_reply_to_id,media_ids=media_files)
 
 def res01(): #お返事関数シンプル版。
     global timer_toot
     global g_sta
-    global post_toot
     global learn_toot
-    global in_reply_to_id
     status = g_sta
     in_reply_to_id = None
     if timer_toot == 0:
@@ -156,15 +149,12 @@ def res01(): #お返事関数シンプル版。
                     else:
                         sleep(4)
                     post_toot = row[1].replace('\\n', '\n')
-                    toot_res()
+                    toot_res(post_toot,"public",None,None)
 
 def res02(): #該当するセリフからランダムtootが選ばれてトゥートします。
     global timer_toot
     global g_sta
-    global post_toot
     global learn_toot
-    global in_reply_to_id
-    global media_files
     non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
     status = g_sta
     in_reply_to_id = None
@@ -181,16 +171,13 @@ def res02(): #該当するセリフからランダムtootが選ばれてトゥ�
                     else:
                         sleep(4)
                     post_toot = rand_w('res\\'+row[1]+'.txt')
-                    toot_res()
+                    toot_res(post_toot,"public",None,None)
                 return
 
 def res03(): #該当する文字があるとメディアをアップロードしてトゥートしてくれます。
     global timer_toot
     global g_sta
-    global post_toot
     global learn_toot
-    global in_reply_to_id
-    global media_files
     non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
     status = g_sta
     in_reply_to_id = None
@@ -206,23 +193,28 @@ def res03(): #該当する文字があるとメディアをアップロードし
                         sleep(int(row[0]))
                     else:
                         sleep(4)
-                    post_toot = rand_w('res\\'+row[1]+'.txt')
-                    f = codecs.open('res_med\\'+row[3]+'.txt', 'r', 'utf-8')
+                        f = codecs.open(txt_deta, 'r', 'utf-8')
                     l = []
                     for x in f:
                         l.append(x.rstrip("\r\n").replace('\\n', '\n'))
                     f.close()
-                    xxx = re.sub("(.*)\.","",l[s])
-                    media_files = [mastodon.media_post("media\\"+l[s-1], "image/"+xxx)]
+                    m = len(l)
+                    s = random.randint(1,m)    
+                    post_toot = rand_w('res\\'+row[1]+'.txt')
+                    f = codecs.open('res_med\\'+row[3]+'.txt', 'r', 'utf-8')
+                    j = []
+                    for x in f:
+                        j.append(x.rstrip("\r\n").replace('\\n', '\n'))
+                    f.close()
+                    xxx = re.sub("(.*)\.","",j[s])
+                    media_files = [mastodon.media_post("media\\"+j[s-1], "image/"+xxx)]
                     print("◇メディア選択しました")
-                    toot_res()
+                    toot_res(post_toot,"public",None,media_files)
                 return
 
 def res04(): #おはよう機能
         global timer_toot
         global g_sta
-        global post_toot
-        global g_vis
         status = g_sta
         account = status["account"]
         if account["acct"] != "1": #一人遊びで挨拶しないようにするための処置
@@ -234,7 +226,7 @@ def res04(): #おはよう機能
                     print("◇Hit")
                     post_toot = account['display_name']+"さん\n"+rand_w('time\\oha.txt')
                     g_vis = "public"
-                    t1 = threading.Timer(8 ,toot)
+                    t1 = threading.Timer(8 ,toot[post_toot,"public",None,None])
                     t1.start()
                 elif zzz == "active":
                     f = codecs.open('at_time\\'+account["acct"]+'.txt', 'r', 'UTF-8')
@@ -256,13 +248,13 @@ def res04(): #おはよう機能
                         print("◇Hit")
                         post_toot = account['display_name']+"さん\n"+to_r
                         g_vis = "public"
-                        t1 = threading.Timer(3 ,toot)
+                        t1 = threading.Timer(3 ,toot,[post_toot,"public",None,None])
                         t1.start()
                 else:
                     print("◇Hit")
                     post_toot = account['display_name']+"さん\n"+"はじめまして、よろしくお願いいたします。"
                     g_vis = "public"
-                    t1 = threading.Timer(3 ,toot)
+                    t1 = threading.Timer(5 ,toot,[post_toot,"public",None,None])
                     t1.start()
             except:        
                 f = codecs.open('oyasumi\\'+account["acct"]+'.txt', 'w', 'UTF-8') 
@@ -273,8 +265,6 @@ def res04(): #おはよう機能
 def res05(): #おやすみ機能
         global timer_toot
         global g_sta
-        global post_toot
-        global g_vis
         status = g_sta
         account = status["account"]
         if account["acct"] != "1": #一人遊びで挨拶しないようにっするための処置
@@ -282,13 +272,12 @@ def res05(): #おやすみ機能
                 print("◇Hit")
                 post_toot = account['display_name']+"さん\n"+rand_w('time\\oya.txt')
                 g_vis = "public"
-                t1 = threading.Timer(3 ,toot)
+                t1 = threading.Timer(3 ,toot,[post_toot,g_vis,None,None])
                 t1.start()
             elif re.compile("こおり(.*)おやすみ").search(status['content']):
                 print("◇Hit")
                 post_toot = account['display_name']+"さん\n"+rand_w('time\\oya.txt')
-                g_vis = "public"
-                t1 = threading.Timer(3 ,toot)
+                t1 = threading.Timer(5 ,toot,[post_toot,"public",None,None])
                 t1.start()
                     
 def fav01(): #自分の名前があったらニコブーして、神崎があったらニコります。
@@ -319,14 +308,15 @@ def reb_now(): #ブーストします
     mastodon.status_reblog(reb)
     print("◇Reb")
 
-def toot_res(): #Postする内容が決まったらtoot関数に渡します。その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
-    global timer_toot
-    global g_vis
+def toot_res(post_toot,g_vis,in_reply_to_id=None,media_files=None): #Postする内容が決まったらtoot関数に渡します。その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
     global learn_toot
-    g_vis = "public"
+    global timer_toot
+    g_vis = g_vis
+    in_reply_to_id=in_reply_to_id
+    media_files=media_files
     if learn_toot != post_toot:
         learn_toot = post_toot
-        toot()
+        toot(post_toot,g_vis,in_reply_to_id,media_files)
         t=threading.Timer(10,time_res)
         t.start()
         timer_toot = 1
