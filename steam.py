@@ -126,7 +126,7 @@ class local_res_toot(StreamListener): #ここではLTLを監視する継承ク�
         print(status_id)
         pass
 
-def toot(post_toot,g_vis,in_reply_to_id=None,media_files=None): # トゥートする関数処理だよ！
+def toot(post_toot,g_vis="public",in_reply_to_id=None,media_files=None): # トゥートする関数処理だよ！
     print(in_reply_to_id)
     mastodon.status_post(status=post_toot, visibility=g_vis, in_reply_to_id=in_reply_to_id,media_ids=media_files)
 
@@ -388,18 +388,11 @@ if __name__ == '__main__': #ファイルから直接開いたら動くよ！
     learn_toot = ""
     in_reply_to_id = None
     media_files = None
-    try:    
-        u = threading.Timer(0 ,t_local)
-        u.start()
-    except:
-        u = threading.Timer(10 ,t_local)
-        u.start()
-    try:
-        l = threading.Timer(0 ,t_user)
-        l.start()
-    except:
-        l = threading.Timer(10 ,t_user)
-        l.start()
+    u = threading.Timer(0 ,t_local)
+    u.start()
+    l = threading.Timer(0 ,t_user)
+    l.start()
+
     #Try作戦でなんとかなるかな？（すっとぼけ）
     
 """
