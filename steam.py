@@ -271,8 +271,7 @@ def res05(): #おやすみ機能
             if re.compile("寝マストドン|寝ます|みんな(.*)おやすみ|おやすみ(.*)みんな").search(status['content']):
                 print("◇Hit")
                 post_toot = account['display_name']+"さん\n"+rand_w('time\\oya.txt')
-                g_vis = "public"
-                t1 = threading.Timer(3 ,toot,[post_toot,g_vis,None,None])
+                t1 = threading.Timer(3 ,toot,[post_toot,"public",None,None])
                 t1.start()
             elif re.compile("こおり(.*)おやすみ").search(status['content']):
                 print("◇Hit")
