@@ -58,7 +58,13 @@ class user_res_toot(StreamListener): #ホームでフォローした人と通知
             if mentions:
                 m = mentions[0]
                 print(m["acct"])
-                if m["acct"] == "1":
+                if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(status['content']):
+                    post_toot = "@"+str(account["acct"])+" "+"ネイティオさん、私が起きてから"+str(count.twotwo)+"回鳴きました。"
+                    g_vis = "public"
+                elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(status['content']):
+                    post_toot = "@"+str(account["acct"])+" "+"トゥートゥー、トゥートゥトゥトゥ「"+str(count.twotwo)+"」"
+                    g_vis = "public"
+                else :
                     global api_Bot
                     url = "https://chatbot-api.userlocal.jp/api/chat" #人工知能APIサービス登録してお借りしてます。
                     s = requests.session()
@@ -70,17 +76,17 @@ class user_res_toot(StreamListener): #ホームでフォローした人と通知
                     r =  s.post(url, params=params)
                     ans = json.loads(r.text)
                     post_toot = "@"+str(account["acct"])+" "+ans["result"]
-                    g_vis = status["visibility"]
-                    in_reply_to_id = int(status["in_reply_to_id"])
-                    in_reply_to_id += int(status["id"])
-                    t = threading.Timer(5 ,toot,[post_toot,g_vis,in_reply_to_id,None])
-                    t.start()
+                
+                g_vis = status["visibility"]
+                in_reply_to_id = status["in_reply_to_id"]
+                t = threading.Timer(5 ,bot.toot,[post_toot,g_vis,in_reply_to_id,None])
+                t.start()
 
         elif notification["type"] == "favourite": #通知がニコられたときです。
             if account["acct"] == "knzk":
                 bot.knzk_fav += 1
-                print("神崎にふぁぼられた数:"+knzk_fav)
-                if knzk_fav == 10:
+                print("神崎にふぁぼられた数:"+bot.knzk_fav)
+                if bot.knzk_fav == 10:
                     f = codecs.open('res\\fav_knzk.txt', 'r', 'utf-8')
                     l = []
                     for x in f:
@@ -89,7 +95,7 @@ class user_res_toot(StreamListener): #ホームでフォローした人と通知
                     m = len(l)
                     s =random.randint(1,m)
                     post_toot = (l[s-1])
-                    toot_res()
+                    bot.toot_res(post_toot)
         pass
 
 class local_res_toot(StreamListener): #ここではLTLを監視する継承クラスになります。
@@ -112,6 +118,7 @@ class local_res_toot(StreamListener): #ここではLTLを監視する継承ク�
         bot.res05(status)
         bot.check02(status)
         bot.check03(status)
+        bot.twotwo(status)
         pass
 
     def on_delete(self, status_id): #トゥー消し警察の監視場になります。
@@ -319,6 +326,13 @@ class bot():
             f.close() # ファイルを閉じる
             print("◇寝る人を記憶しました")
 
+    def twotwo(status): #ネイティオが鳴いた数を監視しまーすｗｗｗｗｗ
+        account = status["account"]
+        if account["acct"] == "twotwo":
+            if re.compile("トゥ|ﾄｩ").search(re.sub("<p>|</p>","",status['content'])):
+                count.twotwo += 1
+                print("ネイティオが鳴いた数:"+str(count.twotwo))
+
     def rand_w(txt_deta):
         f = codecs.open(txt_deta, 'r', 'utf-8')
         l = []
@@ -349,6 +363,7 @@ class count():
     knzk_fav = 0
     timer_toot = 0
     learn_toot = ""
+    twotwo = 0
 
 if __name__ == '__main__': #ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
