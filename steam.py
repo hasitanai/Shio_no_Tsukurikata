@@ -20,6 +20,7 @@ reは正規表現検索用　sysとjsonは多分何かの基盤
 threadingはマルチ稼働のため　csvはトゥート保管のデータ形式のため。
 codecsは文字化け処理用。　randomは文字通りランダムにするためのもの。
 warningsは……分からん！！！！
+今後入れる予定のモジュ「os」
 """
 
 warnings.simplefilter("ignore", UnicodeWarning)
@@ -55,32 +56,28 @@ class user_res_toot(StreamListener): #ホームでフォローした人と通知
             content = status["content"]
             print((re.sub("<p>|</p>", "", str(content).translate(non_bmp_map))))
             print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
-            if mentions:
-                m = mentions[0]
-                print(m["acct"])
-                if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(status['content']):
-                    post_toot = "@"+str(account["acct"])+" "+"ネイティオさん、私が起きてから"+str(count.twotwo)+"回鳴きました。"
-                    g_vis = "public"
-                elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(status['content']):
-                    post_toot = "@"+str(account["acct"])+" "+"トゥートゥー、トゥートゥトゥトゥ「"+str(count.twotwo)+"」"
-                    g_vis = "public"
-                else :
-                    global api_Bot
-                    url = "https://chatbot-api.userlocal.jp/api/chat" #人工知能APIサービス登録してお借りしてます。
-                    s = requests.session()
-                    mes = (re.sub("<span class(.*)/a></span>|<p>|</p>", "", str(content)))
-                    params = {
-                        'key': api_Bot, #登録するとAPIKeyがもらえますのでここに入れます。
-                        'message': mes,
-                    }
-                    r =  s.post(url, params=params)
-                    ans = json.loads(r.text)
-                    post_toot = "@"+str(account["acct"])+" "+ans["result"]
-                
+            if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(status['content']):
+                post_toot = "@"+str(account["acct"])+" "+"ネイティオさん、私が起きてから"+str(count.twotwo)+"回鳴きました。"
                 g_vis = status["visibility"]
-                in_reply_to_id = status["in_reply_to_id"]
-                t = threading.Timer(5 ,bot.toot,[post_toot,g_vis,in_reply_to_id,None])
-                t.start()
+            elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(status['content']):
+                post_toot = "@"+str(account["acct"])+" "+"トゥートゥー、トゥートゥトゥトゥ「"+str(count.twotwo)+"」"
+                g_vis = status["visibility"]
+            else :
+                global api_Bot
+                url = "https://chatbot-api.userlocal.jp/api/chat" #人工知能APIサービス登録してお借りしてます。
+                s = requests.session()
+                mes = (re.sub("<span class(.*)/a></span>|<p>|</p>", "", str(content)))
+                params = {
+                    'key': api_Bot, #登録するとAPIKeyがもらえますのでここに入れます。
+                    'message': mes,
+                }
+                r =  s.post(url, params=params)
+                ans = json.loads(r.text)
+                post_toot = "@"+str(account["acct"])+" "+ans["result"]       
+                g_vis = status["visibility"]
+            in_reply_to_id = status["id"]
+            t = threading.Timer(5 ,bot.toot,[post_toot,g_vis,in_reply_to_id,None])
+            t.start()
 
         elif notification["type"] == "favourite": #通知がニコられたときです。
             if account["acct"] == "knzk":
@@ -250,7 +247,6 @@ class bot():
                     f = codecs.open('oyasumi\\'+account["acct"]+'.txt', 'w', 'UTF-8') 
                     f.write("active") 
                     f.close()
-
                     
     def res05(status): #おやすみ機能
             account = status["account"]
