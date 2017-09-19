@@ -28,7 +28,7 @@ mastodon = Mastodon(
 
 class test():
     def rss():
-        RSS_URL = ""https://knzk.me/@0.atom"" #ここにRSSの.atom
+        RSS_URL = "https://github.com/GenkaiDev/mastodon/commits/knzk-master.atom" #ここにRSSの.atom
 
         rss_dic = feedparser.parse(RSS_URL)
 
