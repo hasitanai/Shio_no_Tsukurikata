@@ -308,13 +308,13 @@ class bot():
         print("◇Reb")
 
     def toot_res(post_toot, g_vis, in_reply_to_id=None,
-                 media_files=None):  # Postする内容が決まったらtoot関数に渡します。その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
+                 media_files=None, spoiler_text=None):  # Postする内容が決まったらtoot関数に渡します。その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
         g_vis = g_vis
         in_reply_to_id = in_reply_to_id
         media_files = media_files
         if count.learn_toot != post_toot:
             count.learn_toot = post_toot
-            bot.toot(post_toot, g_vis, in_reply_to_id, media_files)
+            bot.toot(post_toot, g_vis, in_reply_to_id, media_files, spoiler_text)
             t = threading.Timer(10, bot.time_res)
             t.start()
             count.timer_toot = 1
@@ -391,54 +391,66 @@ class game():
     def dice(inp):
         l=[]
         n=[]
+        m=[]
         x=0
         try:
-            rr = re.search("\d+[dD]", str(inp))
-            r = re.sub("[dD]", "", str(rr.group()))
-            if re.compile("(\d+)([:<>]|&lt;|&gt;)(\d+)").search(inp):
-                ss = re.search("(.*)[dD](\d+)([:<>]|&lt;|&gt;)(\d+)(.*)", str(inp))
-                print(str(ss.group(4)))
-                print(str(ss.group(5)))
-                s = str(ss.group(4))
-                sd = str(ss.group(5))
-            m = re.search("[dD](\d+)", str(inp))
-            m = re.sub("[dD]", "", str(m.group(1)))
-            m = int(m)
-            r = int(r)
-            if m == 0:
+            inp = re.sub("&lt;", "<", str(inp))
+            inp = re.sub("&gt;", ">", str(inp))
+            com = re.search("(\d+)[dD](\d+)([:<>]*)(\d*)([\+\-\*/\d]*)(.*)", str(inp)) 
+            print(str(com.group()))
+            for v in range(1,7):
+                m.append(com.group(v))
+            print(m)
+            if int(m[1]) == 0:
                 result = "面がないので振りません"
-            elif r >= 51:
+            elif int(m[0]) >= 51:
                 result = "回数が多いので振りません"
-            elif r == 0:
+            elif int(m[0]) == 0:
                 result = "回数0なので振りません"
             else:
-                print(str(m),str(r))
                 print("○サイコロ振ります")
-                for var in range(0, r):
-                    num = random.randint(1, m)
+                for var in range(0, int(m[0])):
+                    num = random.randint(1, int(m[1]))
                     num = str(num)
+                    print(num)
+                    if m[4] == True:
+                        ad = m[4]
+                    else:
+                        ad = ""
                     try:
-                        if str(ss.group(3)) == ">" and str(ss.group(3)) == "&gt;":
-                            if int(num) >= int(s):
-                                result="ｺﾛｺﾛ……"+num+":成功 "+sd
-                            else:
-                                result="ｺﾛｺﾛ……"+num+":失敗 "+sd
+                        if ad == "":
+                            dd = 0
                         else:
-                            if int(num) <= int(s):
-                                result="ｺﾛｺﾛ……"+num+":成功 "+sd
+                            dd = int(ad)
+                        if m[5] == "":
+                            fd = "［"+m[3]+m[4]+"］→"
+                        else:
+                            fd = "［"+m[5]+"("+m[3]+m[4]+")］→"
+                        sd = ad+fd
+                        if str(m[2]) == ">":
+                            if int(num) >= int(m[3])+dd:
+                                result="ｺﾛｺﾛ……"+num+sd+"成功"
                             else:
-                                result="ｺﾛｺﾛ……"+num+":失敗 "+sd
+                                result="ｺﾛｺﾛ……"+num+sd+"失敗"
+                        else:
+                            if int(num)+dd <= int(m[3])+dd:
+                                result="ｺﾛｺﾛ……"+num+sd+"成功"
+                            else:
+                                result="ｺﾛｺﾛ……"+num+sd+"失敗"
                     except:
                         result="ｺﾛｺﾛ……"+num
                     l.append(result)
                     n.append(int(num))
                     x += int(num)
-                if r != 1:
-                    result=str(n)+" = "+str(x)
+                if ad != "":
+                    x += int(ad)
+                if int(m[0]) != 1:
+                    result=str(n)+str(ad)+" = "+str(x)
                     l.append(result)
                 print(l)
                 result = '\n'.join(l)
                 if len(result) > 400:
+
                     result = "文字数制限……"
         except:
             traceback.print_exc()
@@ -448,10 +460,10 @@ class game():
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
     count()
-    u = threading.Timer(0, bot.t_local)
-    u.start()
-    l = threading.Timer(0, bot.t_user)
-    l.start()
+    uuu = threading.Timer(0, bot.t_local)
+    uuu.start()
+    lll = threading.Timer(0, bot.t_user)
+    lll.start()
 
 """
 「mastodon.」メソッドを下記の関数によって「ホーム」「連合」「ローカル」「指定のハッシュタグ」が選択できます
