@@ -59,7 +59,7 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
             account = status["account"]
             mentions = status["mentions"]
             content = status["content"]
-            print((re.sub("<p>|</p>", "", str(content).translate(non_bmp_map))))
+            print((re.sub("<span class(.+)</span></a></span>|<p>|</p>", "", str(content).translate(non_bmp_map))))
             print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
             if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(status['content']):
                 post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(count.twotwo) + "回鳴きました。"
@@ -68,14 +68,14 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
                 g_vis = status["visibility"]
             elif re.compile("\d+[dD]\d+").search(status['content']):
-                coro = (re.sub("<p>|</p>", "", str(status['content']).translate(non_bmp_map)))
+                coro = (re.sub("<span class(.+)</span></a></span>|<p>|</p>", "", str(status['content']).translate(non_bmp_map)))
                 post_toot="@"+str(account["acct"])+"\n"+game.dice(coro)
                 g_vis = status["visibility"]
             else:
                 global api_Bot
                 url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
                 s = requests.session()
-                mes = (re.sub("<span class(.*)/a></span>|<p>|</p>", "", str(content)))
+                mes = (re.sub("<span class(.+)</span></a></span>|<p>|</p>", "", str(content)))
                 params = {
                     'key': api_Bot,  # 登録するとAPIKeyがもらえますのでここに入れます。
                     'message': mes,
@@ -395,11 +395,12 @@ class game():
         try:
             rr = re.search("\d+[dD]", str(inp))
             r = re.sub("[dD]", "", str(rr.group()))
-            if re.compile("(\d+)[:<>](\d+)").search(inp):
-                ss = re.search("(.*)[dD](\d+)([:<>])(\d+)([^\d]*)", str(inp))
+            if re.compile("(\d+)([:<>]|&lt;|&gt;)(\d+)").search(inp):
+                ss = re.search("(.*)[dD](\d+)([:<>]|&lt;|&gt;)(\d+)(.*)", str(inp))
                 print(str(ss.group(4)))
+                print(str(ss.group(5)))
                 s = str(ss.group(4))
-                sd = str(ss.group(4))
+                sd = str(ss.group(5))
             m = re.search("[dD](\d+)", str(inp))
             m = re.sub("[dD]", "", str(m.group(1)))
             m = int(m)
@@ -417,7 +418,7 @@ class game():
                     num = random.randint(1, m)
                     num = str(num)
                     try:
-                        if str(ss.group(3)) == ">":
+                        if str(ss.group(3)) == ">" and str(ss.group(3)) == "&gt;":
                             if int(num) >= int(s):
                                 result="ｺﾛｺﾛ……"+num+":成功 "+sd
                             else:
