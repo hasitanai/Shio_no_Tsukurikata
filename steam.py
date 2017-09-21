@@ -13,6 +13,7 @@ import codecs
 import random
 from datetime import datetime
 import os
+import traceback
 
 """
 上記必要なものはpipしていってね！！！
@@ -66,6 +67,10 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
             elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(status['content']):
                 post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
                 g_vis = status["visibility"]
+            elif re.compile("\d+[dD]\d+").search(status['content']):
+                coro = (re.sub("<p>|</p>", "", str(status['content']).translate(non_bmp_map)))
+                post_toot="@"+str(account["acct"])+"\n"+game.dice(coro)
+                g_vis = status["visibility"]
             else:
                 global api_Bot
                 url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
@@ -80,7 +85,7 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 post_toot = "@" + str(account["acct"]) + " " + ans["result"]
                 g_vis = status["visibility"]
             in_reply_to_id = status["id"]
-            t = threading.Timer(5, bot.toot, [post_toot, g_vis, in_reply_to_id, None])
+            t = threading.Timer(5, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
             t.start()
 
         elif notification["type"] == "favourite":  # 通知がニコられたときです。
@@ -120,6 +125,7 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
         bot.res03(status)  # もっとここは上手くスマートに出来ると思うけどゴリ押し（はぁと
         bot.res04(status)
         bot.res05(status)
+        bot.res06(status)
         bot.check02(status)
         bot.check03(status)
         bot.twotwo(status)
@@ -136,9 +142,9 @@ class bot():
         self.in_reply_to_id = None
         self.media_files = None
 
-    def toot(post_toot, g_vis="public", in_reply_to_id=None, media_files=None):  # トゥートする関数処理だよ！
+    def toot(post_toot, g_vis="public", in_reply_to_id=None, media_files=None, spoiler_text=None):  # トゥートする関数処理だよ！
         print(in_reply_to_id)
-        mastodon.status_post(status=post_toot, visibility=g_vis, in_reply_to_id=in_reply_to_id, media_ids=media_files)
+        mastodon.status_post(status=post_toot, visibility=g_vis, in_reply_to_id=in_reply_to_id, media_ids=media_files, spoiler_text=spoiler_text)
 
     def res01(status):  # お返事関数シンプル版。
         in_reply_to_id = None
@@ -155,7 +161,7 @@ class bot():
                         else:
                             sleep(4)
                         post_toot = row[1].replace('\\n', '\n')
-                        bot.toot_res(post_toot, "public", None, None)
+                        bot.toot_res(post_toot, "public", None, None, None)
 
     def res02(status):  # 該当するセリフからランダムtootが選ばれてトゥートします。
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
@@ -173,7 +179,7 @@ class bot():
                         else:
                             sleep(4)
                         post_toot = bot.rand_w('res\\' + row[1] + '.txt')
-                        bot.toot_res(post_toot, "public", None, None)
+                        bot.toot_res(post_toot, "public", None, None, None)
                     return
 
     def res03(status):  # 該当する文字があるとメディアをアップロードしてトゥートしてくれます。
@@ -207,7 +213,7 @@ class bot():
                         xxx = re.sub("(.*)\.", "", j[s])
                         media_files = [mastodon.media_post("media\\" + j[s - 1], "image/" + xxx)]
                         print("◇メディア選択しました")
-                        bot.toot_res(post_toot, "public", None, media_files)
+                        bot.toot_res(post_toot, "public", None, media_files, None)
                     return
 
     def res04(status):  # おはよう機能
@@ -221,7 +227,7 @@ class bot():
                     print("◇Hit")
                     post_toot = account['display_name'] + "さん\n" + rand_w('time\\oha.txt')
                     g_vis = "public"
-                    t1 = threading.Timer(8, bot.toot[post_toot, "public", None, None])
+                    t1 = threading.Timer(8, bot.toot[post_toot, "public", None, None, None])
                     t1.start()
                 elif zzz == "active":
                     f = codecs.open('at_time\\' + account["acct"] + '.txt', 'r', 'UTF-8')
@@ -243,13 +249,13 @@ class bot():
                         print("◇Hit")
                         post_toot = account['display_name'] + "さん\n" + to_r
                         g_vis = "public"
-                        t1 = threading.Timer(3, bot.toot, [post_toot, "public", None, None])
+                        t1 = threading.Timer(3, bot.toot, [post_toot, "public", None, None, None])
                         t1.start()
                 else:
                     print("◇Hit")
                     post_toot = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
                     g_vis = "public"
-                    t1 = threading.Timer(5, bot.toot, [post_toot, "public", None, None])
+                    t1 = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
                     t1.start()
             except:
                 f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
@@ -262,24 +268,34 @@ class bot():
             if re.compile("寝マストドン|寝ます|みんな(.*)おやすみ|おやすみ(.*)みんな").search(status['content']):
                 print("◇Hit")
                 post_toot = account['display_name'] + "さん\n" + rand_w('time\\oya.txt')
-                t1 = threading.Timer(3, toot, [post_toot, "public", None, None])
+                t1 = threading.Timer(3, toot, [post_toot, "public", None, None, None])
                 t1.start()
             elif re.compile("こおり(.*)おやすみ").search(status['content']):
                 print("◇Hit")
                 post_toot = account['display_name'] + "さん\n" + rand_w('time\\oya.txt')
-                t1 = threading.Timer(5, bot.toot, [post_toot, "public", None, None])
+                t1 = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
                 t1.start()
 
+    def res06(status):
+        if re.compile("こおり(.*)[1-5][dD]\d+").search(status['content']):
+            print("○hitしました♪")
+            account = status["account"]
+            non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+            coro = (re.sub("<p>|</p>", "", str(status['content']).translate(non_bmp_map)))
+            post_toot="@"+str(account["acct"])+"\n"+game.dice(coro)
+            g_vis = status["visibility"]
+            t = threading.Timer(5, bot.toot, [post_toot, g_vis, None, None, "サイコロ振りますね。"])
+            t.start()
+
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
-        if re.compile("こおり").search(status['content']):
+        if re.compile("こおり|(神[埼崎]|knzk|(100|5000兆)db)").search(status['content']):
             v = threading.Timer(1, bot.fav_now, [status])
             v.start()
+
+
+        if re.compile("こおり").search(status['content']):
             b = threading.Timer(2, bot.reb_now, [status])
             b.start()
-
-        if re.compile("神[埼崎]|knzk|(100|5000兆)db").search(status['content']):
-            v = threading.Timer(1, bot.fav_now, [status])
-            v.start()
 
     def fav_now(status):  # ニコります
         fav = status["id"]
@@ -371,6 +387,62 @@ class count():
     learn_toot = ""
     twotwo = 0
 
+class game():
+    def dice(inp):
+        l=[]
+        n=[]
+        x=0
+        try:
+            rr = re.search("\d+[dD]", str(inp))
+            r = re.sub("[dD]", "", str(rr.group()))
+            if re.compile("(\d+)[:<>](\d+)").search(inp):
+                ss = re.search("(.*)[dD](\d+)([:<>])(\d+)([^\d]*)", str(inp))
+                print(str(ss.group(4)))
+                s = str(ss.group(4))
+                sd = str(ss.group(4))
+            m = re.search("[dD](\d+)", str(inp))
+            m = re.sub("[dD]", "", str(m.group(1)))
+            m = int(m)
+            r = int(r)
+            if m == 0:
+                result = "面がないので振りません"
+            elif r >= 51:
+                result = "回数が多いので振りません"
+            elif r == 0:
+                result = "回数0なので振りません"
+            else:
+                print(str(m),str(r))
+                print("○サイコロ振ります")
+                for var in range(0, r):
+                    num = random.randint(1, m)
+                    num = str(num)
+                    try:
+                        if str(ss.group(3)) == ">":
+                            if int(num) >= int(s):
+                                result="ｺﾛｺﾛ……"+num+":成功 "+sd
+                            else:
+                                result="ｺﾛｺﾛ……"+num+":失敗 "+sd
+                        else:
+                            if int(num) <= int(s):
+                                result="ｺﾛｺﾛ……"+num+":成功 "+sd
+                            else:
+                                result="ｺﾛｺﾛ……"+num+":失敗 "+sd
+                    except:
+                        result="ｺﾛｺﾛ……"+num
+                    l.append(result)
+                    n.append(int(num))
+                    x += int(num)
+                if r != 1:
+                    result=str(n)+" = "+str(x)
+                    l.append(result)
+                print(l)
+                result = '\n'.join(l)
+                if len(result) > 400:
+                    result = "文字数制限……"
+        except:
+            traceback.print_exc()
+            result="エラーが出ました……"
+        return result
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
