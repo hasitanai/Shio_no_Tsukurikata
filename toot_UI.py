@@ -33,10 +33,12 @@ def toot(post_toot, g_vis="public", in_reply_to_id=None, media_files=None, spoil
     elif val.get() == 3:
         g_vis="direct"
     in_reply_to_id=Reply.get()
-    xxx = re.sub("(.*)\.", "", temp.filename)
-    media_files = [mastodon.media_post(temp.filename, "image/" + xxx)]
+    if  temp.filename != None:
+        xxx = re.sub("(.*)\.", "", temp.filename)
+        media_files = [mastodon.media_post(temp.filename, "image/" + xxx)]
     mastodon.status_post(status=post_toot, visibility=g_vis, in_reply_to_id=in_reply_to_id, media_ids=media_files, spoiler_text=spoiler_text)
     echo.set("None")
+    temp.filename = None
 
 def file(event):
     temp.filename = Filed.askopenfilename()
@@ -84,8 +86,8 @@ Button = Tk.Button(text=u'Toot', width=50)
 Button.bind("<Button-1>",Post) 
 Button.pack()
 
-
 if __name__ == '__main__':
+    temp.filename = None
     root.mainloop()
 
 
