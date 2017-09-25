@@ -199,20 +199,22 @@ class bot():
                             sleep(4)
                             f = codecs.open(txt_deta, 'r', 'utf-8')
                         l = []
+                        f = codecs.open('res\\' + row[1] + '.txt', 'r', 'utf-8')
                         for x in f:
                             l.append(x.rstrip("\r\n").replace('\\n', '\n'))
                         f.close()
                         m = len(l)
                         s = random.randint(1, m)
-                        post_toot = bot.rand_w('res\\' + row[1] + '.txt')
+                        post_toot = l[s - 1]
                         f = codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8')
                         j = []
                         for x in f:
                             j.append(x.rstrip("\r\n").replace('\\n', '\n'))
                         f.close()
-                        xxx = re.sub("(.*)\.", "", j[s])
+                        xxx = re.sub("(.*)\.", "", j[s - 1])
                         media_files = [mastodon.media_post("media\\" + j[s - 1], "image/" + xxx)]
                         print("◇メディア選択しました")
+                        print(j[s - 1])
                         bot.toot_res(post_toot, "public", None, media_files, None)
                     return
 

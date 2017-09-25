@@ -1,2 +1,7 @@
-_\n\n[spin]ぐるぐる～[/spin]\n\n_
-_\n\n[spin]回しますね[/spin]\n\n_
+﻿ \n\n[spin]ぐるぐる～[/spin]\n\n 
+ \n\n[spin]回しますね[/spin]\n\n 
+ \n\n[spin]ぐるぐる～[/spin]\n\n 
+ \n\n[spin]回しますね[/spin]\n\n 
+ \n\n[spin][flip=horizontal][spin][size=120]👳[/size][/spin][/flip][flip=horizontal][spin][size=120]🙏[/size][/spin][/flip][/spin]\n[flip=horizontal][spin][flip=horizontal][spin][size=120]👳[/size][/spin][/flip][flip=horizontal][spin][size=120]🙏[/size][/spin][/flip][/spin][/flip]\n\n 
+ \n\n[spin][flip=horizontal][spin][spin][flip=horizontal][spin]熱盛[/spin][/flip]　[flip=horizontal][spin]5000兆円[/spin][/flip][/spin][/spin][/flip]　[flip=horizontal][spin][spin][flip=horizontal][spin]欲しい！[/spin][/flip]　[flip=horizontal][spin]バジリスクタイム[/spin][/flip][/spin][/spin][/flip][/spin]\n\n 
+ \n\n[spin][spin][spin][spin][flip=horizontal][spin][spin][spin][spin][large=3x]😋[/large][/spin][/spin][/spin][/spin][/flip]　　　[flip=horizontal][spin][spin][spin][spin][large=3x]😋[/large][/spin][/spin][/spin][/spin][/flip][/spin][/spin][/spin][/spin]\n\n 
