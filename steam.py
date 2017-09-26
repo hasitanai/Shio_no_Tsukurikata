@@ -3,16 +3,10 @@
 from mastodon import *
 from time import sleep
 import warnings
-import re
-import sys
-import threading
+import re, sys, os, csv, json, codecs
+import threading, requests, random
 import requests
-import json
-import csv
-import codecs
-import random
 from datetime import datetime
-import os
 import traceback
 
 """
@@ -126,6 +120,7 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
         bot.res04(status)
         bot.res05(status)
         bot.res06(status)
+        game.omikuji(status)
         bot.check02(status)
         bot.check03(status)
         bot.twotwo(status)
@@ -458,6 +453,19 @@ class game():
             traceback.print_exc()
             result="エラーが出ました……"
         return result
+
+    def omikuji(status):
+        non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+        in_reply_to_id = None
+        if count.timer_toot == 0:
+            if re.compile('こおり(.*)おみくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(re.sub("<p>|</p>", "", status['content'].translate(non_bmp_map))):
+                acc = status['account']
+                if acc['acct'] != "1":
+                    print("◇Hit")
+                    sleep(5)
+                    post_toot = bot.rand_w('res\\' + 'kuji' + '.txt') + " " + "@" + acc['acct']
+                    bot.toot_res(post_toot, "public", None, None, None)
+                return
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
