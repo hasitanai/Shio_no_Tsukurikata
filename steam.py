@@ -224,7 +224,7 @@ class bot():
                 f.close()  # ファイルを閉じる
                 if zzz == "good_night":
                     print("◇Hit")
-                    post_toot = account['display_name'] + "さん\n" + rand_w('time\\oha.txt')
+                    post_toot = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
                     g_vis = "public"
                     t1 = threading.Timer(8, bot.toot[post_toot, "public", None, None, None])
                     t1.start()
@@ -266,12 +266,12 @@ class bot():
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
             if re.compile("寝マストドン|寝ます|みんな(.*)おやすみ|おやすみ(.*)みんな").search(status['content']):
                 print("◇Hit")
-                post_toot = account['display_name'] + "さん\n" + rand_w('time\\oya.txt')
+                post_toot = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
                 t1 = threading.Timer(3, toot, [post_toot, "public", None, None, None])
                 t1.start()
             elif re.compile("こおり(.*)おやすみ").search(status['content']):
                 print("◇Hit")
-                post_toot = account['display_name'] + "さん\n" + rand_w('time\\oya.txt')
+                post_toot = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
                 t1 = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
                 t1.start()
 
