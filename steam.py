@@ -10,13 +10,12 @@ from datetime import datetime
 import traceback
 
 """
-上記必要なものはpipしていってね！！！
-多分Mastodon.pyとrequestsくらいかな？
+上記必要なものはpipしていってね！！！　多分Mastodon.pyとrequestsくらいかな？
 reは正規表現検索用　sysとjsonは多分何かの基盤
 threadingはマルチ稼働のため　csvはトゥート保管のデータ形式のため。
 codecsは文字化け処理用。　randomは文字通りランダムにするためのもの。
-warningsは……分からん！！！！
-今後入れる予定のモジュ「os」
+osフォルダ参照用。tracebackはエラー報告のデバック用。warningsは……分からん！！！！
+今後入れる予定のモジュ「Numpy」
 """
 
 warnings.simplefilter("ignore", UnicodeWarning)
@@ -62,8 +61,10 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
                 g_vis = status["visibility"]
             elif re.compile("\d+[dD]\d+").search(status['content']):
-                coro = (re.sub("<span class(.+)</span></a></span>|<p>|</p>", "", str(status['content']).translate(non_bmp_map)))
-                post_toot="@"+str(account["acct"])+"\n"+game.dice(coro)
+                coro = (
+                    re.sub("<span class(.+)</span></a></span>|<p>|</p>", "",
+                           str(status['content']).translate(non_bmp_map)))
+                post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
                 g_vis = status["visibility"]
             else:
                 global api_Bot
@@ -139,11 +140,12 @@ class bot():
 
     def toot(post_toot, g_vis="public", in_reply_to_id=None, media_files=None, spoiler_text=None):  # トゥートする関数処理だよ！
         print(in_reply_to_id)
-        mastodon.status_post(status=post_toot, visibility=g_vis, in_reply_to_id=in_reply_to_id, media_ids=media_files, spoiler_text=spoiler_text)
+        mastodon.status_post(status=post_toot, visibility=g_vis, in_reply_to_id=in_reply_to_id, media_ids=media_files,
+                             spoiler_text=spoiler_text)
 
     def res01(status):  # お返事関数シンプル版。
         in_reply_to_id = None
-        if count.timer_toot == 0:
+        if not count.toot_CT:
             f = codecs.open('reply.csv', 'r', "UTF-8", "ignore")
             dataReader = csv.reader(f)
             for row in dataReader:
@@ -161,7 +163,7 @@ class bot():
     def res02(status):  # 該当するセリフからランダムtootが選ばれてトゥートします。
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         in_reply_to_id = None
-        if count.timer_toot == 0:
+        if not count.toot_CT:
             f = codecs.open('reply_random.csv', 'r', "UTF-8", "ignore")
             dataReader = csv.reader(f)
             for row in dataReader:
@@ -180,7 +182,7 @@ class bot():
     def res03(status):  # 該当する文字があるとメディアをアップロードしてトゥートしてくれます。
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         in_reply_to_id = None
-        if count.timer_toot == 0:
+        if not count.toot_CT:
             f = codecs.open('reply_media.csv', 'r', "UTF-8", "ignore")
             dataReader = csv.reader(f)
             for row in dataReader:
@@ -279,7 +281,7 @@ class bot():
             account = status["account"]
             non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
             coro = (re.sub("<p>|</p>", "", str(status['content']).translate(non_bmp_map)))
-            post_toot="@"+str(account["acct"])+"\n"+game.dice(coro)
+            post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
             g_vis = status["visibility"]
             t = threading.Timer(5, bot.toot, [post_toot, g_vis, None, None, "サイコロ振りますね。"])
             t.start()
@@ -288,7 +290,6 @@ class bot():
         if re.compile("こおり|(神[埼崎]|knzk|(100|5000兆)db)").search(status['content']):
             v = threading.Timer(1, bot.fav_now, [status])
             v.start()
-
 
         if re.compile("こおり").search(status['content']):
             b = threading.Timer(2, bot.reb_now, [status])
@@ -314,7 +315,7 @@ class bot():
             bot.toot(post_toot, g_vis, in_reply_to_id, media_files, spoiler_text)
             t = threading.Timer(10, bot.time_res)
             t.start()
-            count.timer_toot = 1
+            count.toot_CT = True
             z = threading.Timer(180, bot.t_forget)  # クールタイム伸ばした。
             z.start()
 
@@ -362,7 +363,7 @@ class bot():
         return l[s - 1]
 
     def time_res():  # クールタイムが終わる処理。
-        count.timer_toot = 0
+        count.toot_CT = False
         print("◇tootの準備ができました")
 
     def t_local():  # listenerオブジェクトには監視させるものを（続く）
@@ -380,22 +381,23 @@ class bot():
 
 class count():
     knzk_fav = 0
-    timer_toot = 0
+    toot_CT = False
     learn_toot = ""
     twotwo = 0
 
+
 class game():
     def dice(inp):
-        l=[]
-        n=[]
-        m=[]
-        x=0
+        l = []
+        n = []
+        m = []
+        x = 0
         try:
             inp = re.sub("&lt;", "<", str(inp))
             inp = re.sub("&gt;", ">", str(inp))
-            com = re.search("(\d+)[dD](\d+)([:<>]*)(\d*)([\+\-\*/\d]*)(.*)", str(inp)) 
+            com = re.search("(\d+)[dD](\d+)([:<>]*)(\d*)([\+\-\*/\d]*)(.*)", str(inp))
             print(str(com.group()))
-            for v in range(1,7):
+            for v in range(1, 7):
                 m.append(com.group(v))
             print(m)
             if int(m[1]) == 0:
@@ -420,45 +422,45 @@ class game():
                         else:
                             dd = int(ad)
                         if m[5] == "":
-                            fd = "［"+m[3]+m[4]+"］→"
+                            fd = "［" + m[3] + m[4] + "］→"
                         else:
-                            fd = "［"+m[5]+"("+m[3]+m[4]+")］→"
-                        sd = ad+fd
+                            fd = "［" + m[5] + "(" + m[3] + m[4] + ")］→"
+                        sd = ad + fd
                         if str(m[2]) == ">":
-                            if int(num) >= int(m[3])+dd:
-                                result="ｺﾛｺﾛ……"+num+sd+"成功"
+                            if int(num) >= int(m[3]) + dd:
+                                result = "ｺﾛｺﾛ……" + num + sd + "成功"
                             else:
-                                result="ｺﾛｺﾛ……"+num+sd+"失敗"
+                                result = "ｺﾛｺﾛ……" + num + sd + "失敗"
                         else:
-                            if int(num)+dd <= int(m[3])+dd:
-                                result="ｺﾛｺﾛ……"+num+sd+"成功"
+                            if int(num) + dd <= int(m[3]) + dd:
+                                result = "ｺﾛｺﾛ……" + num + sd + "成功"
                             else:
-                                result="ｺﾛｺﾛ……"+num+sd+"失敗"
+                                result = "ｺﾛｺﾛ……" + num + sd + "失敗"
                     except:
-                        result="ｺﾛｺﾛ……"+num
+                        result = "ｺﾛｺﾛ……" + num
                     l.append(result)
                     n.append(int(num))
                     x += int(num)
                 if ad != "":
                     x += int(ad)
                 if int(m[0]) != 1:
-                    result=str(n)+str(ad)+" = "+str(x)
+                    result = str(n) + str(ad) + " = " + str(x)
                     l.append(result)
                 print(l)
                 result = '\n'.join(l)
                 if len(result) > 400:
-
                     result = "文字数制限……"
         except:
             traceback.print_exc()
-            result="エラーが出ました……"
+            result = "エラーが出ました……"
         return result
 
     def omikuji(status):
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         in_reply_to_id = None
-        if count.timer_toot == 0:
-            if re.compile('こおり(.*)おみくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(re.sub("<p>|</p>", "", status['content'].translate(non_bmp_map))):
+        if not count.toot_CT:
+            if re.compile('こおり(.*)おみくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(
+                    re.sub("<p>|</p>", "", status['content'].translate(non_bmp_map))):
                 acc = status['account']
                 if acc['acct'] != "1":
                     print("◇Hit")
@@ -466,6 +468,7 @@ class game():
                     post_toot = bot.rand_w('res\\' + 'kuji' + '.txt') + " " + "@" + acc['acct']
                     bot.toot_res(post_toot, "public", None, None, None)
                 return
+
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
