@@ -57,14 +57,20 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
             if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(status['content']):
                 post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(count.twotwo) + "回鳴きました。"
                 g_vis = status["visibility"]
+                sec = 5
             elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(status['content']):
                 post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
                 g_vis = status["visibility"]
+                sec = 5
             elif re.compile("\d+[dD]\d+").search(status['content']):
                 coro = (
                     re.sub("<span class(.+)</span></a></span>|<p>|</p>", "",
                            str(status['content']).translate(non_bmp_map)))
                 post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
+                g_vis = status["visibility"]
+                sec = 5
+            elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(status['content']):
+                post_toot,sec = game.aram(status)
                 g_vis = status["visibility"]
             else:
                 global api_Bot
@@ -79,8 +85,9 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 ans = json.loads(r.text)
                 post_toot = "@" + str(account["acct"]) + " " + ans["result"]
                 g_vis = status["visibility"]
+                sec = 5
             in_reply_to_id = status["id"]
-            t = threading.Timer(5, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
+            t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
             t.start()
 
         elif notification["type"] == "favourite":  # 通知がニコられたときです。
@@ -469,6 +476,21 @@ class game():
                     bot.toot_res(post_toot, "public", None, None, None)
                 return
 
+    def aram(status):
+        non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+        content = str(status['content']).translate(non_bmp_map)
+        account=status['account']
+        com = re.search("(アラーム|[Aa][Rr][Aa][Mm])(\d+)([秒分]?)", content)
+        sec = int(com.group(2))
+        clo = com.group(3)
+        if clo == "分":
+            sec = sec*60
+        else:
+            pass
+        print(str(sec))
+        post_toot = "@" + account["acct"] + " " + "指定した時間が来たのでお知らせします。"
+        g_vis = status["visibility"]
+        return post_toot, sec
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
