@@ -129,6 +129,7 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
         bot.res05(status)
         bot.res06(status)
         game.omikuji(status)
+        game.bals(status)
         bot.check02(status)
         bot.check03(status)
         bot.twotwo(status)
@@ -391,7 +392,10 @@ class count():
     toot_CT = False
     learn_toot = ""
     twotwo = 0
-
+    f = codecs.open('game\\bals.txt', 'r', 'utf-8')
+    bals = f.read()
+    bals = int(bals)
+    f.close
 
 class game():
     def dice(inp):
@@ -472,7 +476,7 @@ class game():
                 if acc['acct'] != "1":
                     print("◇Hit")
                     sleep(5)
-                    post_toot = bot.rand_w('res\\' + 'kuji' + '.txt') + " " + "@" + acc['acct']
+                    post_toot = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
                     bot.toot_res(post_toot, "public", None, None, None)
                 return
 
@@ -491,6 +495,20 @@ class game():
         post_toot = "@" + account["acct"] + " " + "指定した時間が来たのでお知らせします。"
         g_vis = status["visibility"]
         return post_toot, sec
+
+    def bals(status):
+        in_reply_to_id = None
+        if re.compile("バルス|ﾊﾞﾙｽ|ばるす|BA(.?)RU(.?)SU").search(status['content']):
+            print("◇Hit")
+            acc = status['account']
+            if acc['acct'] != "1":
+                sleep(1)
+                count.bals += 1
+                post_toot = "[large=2x][color=red]目がぁぁぁ、目がぁぁぁ！x"+str(count.bals)+"[/color][/large]"
+                f = codecs.open('game\\bals.txt', 'w', 'utf-8')
+                f.write(str(count.bals))
+                f.close
+                bot.toot_res(post_toot, "public", None, None, None)   
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
