@@ -35,105 +35,113 @@ mastodon = Mastodon(
 
 class user_res_toot(StreamListener):  # ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
     def on_notification(self, notification):  # 通知を監視します。
-        print("===●user_on_notification●===")
-        account = notification["account"]
-        non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-        print((re.sub("<p>|</p>", "",
-                      str(account["display_name"]).translate(non_bmp_map) + "@" + str(account["acct"]).translate(
-                          non_bmp_map))))
-        print(notification["type"])
-        if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
-            sleep(2)
-            mastodon.account_follow(account["id"])
-            print("◇フォローを返しました。")
+        try:
+            print("===●user_on_notification●===")
+            account = notification["account"]
+            non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+            print((re.sub("<p>|</p>", "",
+                          str(account["display_name"]).translate(non_bmp_map) + "@" + str(account["acct"]).translate(
+                              non_bmp_map))))
+            print(notification["type"])
+            if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
+                sleep(2)
+                mastodon.account_follow(account["id"])
+                print("◇フォローを返しました。")
 
-        elif notification["type"] == "mention":  # 通知がリプだった場合です。
-            status = notification["status"]
-            account = status["account"]
-            mentions = status["mentions"]
-            content = status["content"]
-            print((re.sub("<span class(.+)</span></a></span>|<p>|</p>", "", str(content).translate(non_bmp_map))))
-            print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
-            if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(status['content']):
-                post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(count.twotwo) + "回鳴きました。"
-                g_vis = status["visibility"]
-                sec = 5
-            elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(status['content']):
-                post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
-                g_vis = status["visibility"]
-                sec = 5
-            elif re.compile("\d+[dD]\d+").search(status['content']):
-                coro = (
-                    re.sub("<span class(.+)</span></a></span>|<p>|</p>", "",
-                           str(status['content']).translate(non_bmp_map)))
-                post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
-                g_vis = status["visibility"]
-                sec = 5
-            elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(status['content']):
-                post_toot,sec = game.aram(status)
-                g_vis = status["visibility"]
-            else:
-                global api_Bot
-                url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
-                s = requests.session()
-                mes = (re.sub("<span class(.+)</span></a></span>|<p>|</p>", "", str(content)))
-                params = {
-                    'key': api_Bot,  # 登録するとAPIKeyがもらえますのでここに入れます。
-                    'message': mes,
-                }
-                r = s.post(url, params=params)
-                ans = json.loads(r.text)
-                post_toot = "@" + str(account["acct"]) + " " + ans["result"]
-                g_vis = status["visibility"]
-                sec = 5
-            in_reply_to_id = status["id"]
-            t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
-            t.start()
+            elif notification["type"] == "mention":  # 通知がリプだった場合です。
+                status = notification["status"]
+                account = status["account"]
+                mentions = status["mentions"]
+                content = status["content"]
+                print((re.sub("<span class(.+)</span></a></span>|<p>|</p>", "", str(content).translate(non_bmp_map))))
+                print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
+                if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(status['content']):
+                    post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(count.twotwo) + "回鳴きました。"
+                    g_vis = status["visibility"]
+                    sec = 5
+                elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(status['content']):
+                    post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
+                    g_vis = status["visibility"]
+                    sec = 5
+                elif re.compile("\d+[dD]\d+").search(status['content']):
+                    coro = (
+                        re.sub("<span class(.+)</span></a></span>|<p>|</p>", "",
+                               str(status['content']).translate(non_bmp_map)))
+                    post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
+                    g_vis = status["visibility"]
+                    sec = 5
+                elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(status['content']):
+                    post_toot,sec = game.aram(status)
+                    g_vis = status["visibility"]
+                else:
+                    global api_Bot
+                    url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
+                    s = requests.session()
+                    mes = (re.sub("<span class(.+)</span></a></span>|<p>|</p>", "", str(content)))
+                    params = {
+                        'key': api_Bot,  # 登録するとAPIKeyがもらえますのでここに入れます。
+                        'message': mes,
+                    }
+                    r = s.post(url, params=params)
+                    ans = json.loads(r.text)
+                    post_toot = "@" + str(account["acct"]) + " " + ans["result"]
+                    g_vis = status["visibility"]
+                    sec = 5
+                in_reply_to_id = status["id"]
+                t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
+                t.start()
 
-        elif notification["type"] == "favourite":  # 通知がニコられたときです。
-            if account["acct"] == "knzk":
-                bot.knzk_fav += 1
-                print("神崎にふぁぼられた数:" + bot.knzk_fav)
-                if bot.knzk_fav == 10:
-                    f = codecs.open('res\\fav_knzk.txt', 'r', 'utf-8')
-                    l = []
-                    for x in f:
-                        l.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                    f.close()
-                    m = len(l)
-                    s = random.randint(1, m)
-                    post_toot = (l[s - 1])
-                    bot.toot_res(post_toot)
-        pass
-
+            elif notification["type"] == "favourite":  # 通知がニコられたときです。
+                if account["acct"] == "knzk":
+                    bot.knzk_fav += 1
+                    print("神崎にふぁぼられた数:" + bot.knzk_fav)
+                    if bot.knzk_fav == 10:
+                        f = codecs.open('res\\fav_knzk.txt', 'r', 'utf-8')
+                        l = []
+                        for x in f:
+                            l.append(x.rstrip("\r\n").replace('\\n', '\n'))
+                        f.close()
+                        m = len(l)
+                        s = random.randint(1, m)
+                        post_toot = (l[s - 1])
+                        bot.toot_res(post_toot)
+            pass
+        except:
+            lll = threading.Timer(10, bot.t_user)
+            lll.start()
 
 class local_res_toot(StreamListener):  # ここではLTLを監視する継承クラスになります。
     def on_update(self, status):  # StreamingAPIがリアルタイムにトゥート情報を吐き出してくれます。
-        print("===○local_on_update○===")
-        account = status["account"]
-        mentions = status["mentions"]
-        content = status["content"]
-        non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-        print((re.sub("<p>|</p>", "",
-                      str(account["display_name"]).translate(non_bmp_map) + "@" + str(account["acct"]).translate(
-                          non_bmp_map))))
-        print((re.sub("<p>|</p>", "", str(content).translate(non_bmp_map))))
-        print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
-        print("   ")
-        bot.check01(status)
-        bot.fav01(status)
-        bot.res01(status)
-        bot.res02(status)  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
-        bot.res03(status)  # もっとここは上手くスマートに出来ると思うけどゴリ押し（はぁと
-        bot.res04(status)
-        bot.res05(status)
-        bot.res06(status)
-        game.omikuji(status)
-        game.bals(status)
-        bot.check02(status)
-        bot.check03(status)
-        bot.twotwo(status)
-        pass
+        try:
+            print("===○local_on_update○===")
+            account = status["account"]
+            mentions = status["mentions"]
+            content = status["content"]
+            non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+            print((re.sub("<p>|</p>", "",
+                          str(account["display_name"]).translate(non_bmp_map) + "@" + str(account["acct"]).translate(
+                              non_bmp_map))))
+            print((re.sub("<p>|</p>", "", str(content).translate(non_bmp_map))))
+            print((re.sub("<p>|</p>", "", str(mentions).translate(non_bmp_map))))
+            print("   ")
+            bot.check01(status)
+            bot.fav01(status)
+            bot.res01(status)
+            bot.res02(status)  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
+            bot.res03(status)  # もっとここは上手くスマートに出来ると思うけどゴリ押し（はぁと
+            bot.res04(status)
+            bot.res05(status)
+            bot.res06(status)
+            game.omikuji(status)
+            game.land(status)
+            bot.check02(status)
+            bot.check03(status)
+            bot.twotwo(status)
+            pass
+        except:          
+            uuu = threading.Timer(10, bot.t_local)
+            uuu.start()
+            
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
         print("===×on_delete×===")
@@ -496,19 +504,32 @@ class game():
         g_vis = status["visibility"]
         return post_toot, sec
 
+    def land(status):
+        in_reply_to_id = None
+        non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+        content = re.sub("<p>|</p>", "", status['content'].translate(non_bmp_map))
+        if re.compile("(.+)(開園)$").search(content):
+            print("◇Hit")
+            acc = status['account']
+            if acc['acct'] != "1":
+                com = re.search("(.+)(開園)", content)
+                post_toot = com.group(1)+"閉園"
+                ba = threading.Timer(5, bot.toot, [post_toot,"public", None, None, None])
+                ba.start()        
+
     def bals(status):
         in_reply_to_id = None
         if re.compile("バルス|ﾊﾞﾙｽ|ばるす|BA(.?)RU(.?)SU").search(status['content']):
             print("◇Hit")
             acc = status['account']
             if acc['acct'] != "1":
-                sleep(1)
                 count.bals += 1
-                post_toot = "[large=2x][color=red]目がぁぁぁ、目がぁぁぁ！x"+str(count.bals)+"[/color][/large]"
                 f = codecs.open('game\\bals.txt', 'w', 'utf-8')
                 f.write(str(count.bals))
-                f.close
-                bot.toot_res(post_toot, "public", None, None, None)   
+                f.close  
+                post_toot = "[large=2x][color=red]目がぁぁぁ、目がぁぁぁ！x"+str(count.bals)+"[/color][/large]"
+                ba = threading.Timer(0, bot.toot, [post_toot,"public", None, None, None])
+                ba.start()
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
