@@ -147,6 +147,7 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             game.land(status)
             bot.check02(status)
             bot.check03(status)
+            bot.check00(status)
             bot.twotwo(status)
             pass
         except Exception as e:
@@ -359,6 +360,30 @@ class bot():
         reb = status["id"]
         mastodon.status_reblog(reb)
         print("◇Reb")
+
+    def check00(status):
+        account = status["account"]
+        ct = account["statuses_count"]
+        if account["acct"] == "1":
+            ct += 1
+            if re.match('^\d+000$', str(ct)):
+                toot_now = str(ct) + 'toot、達成しました……！\n#こおりキリ番記念'
+                g_vis = "public"
+                t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                t.start()
+        else:
+            if re.match('^\d+0000$', str(ct)):
+                post_toot = " :@" + account['acct'] + ": @" + account['acct'] + "\n" + str(
+                    ct) + 'toot、おめでとうございます！'
+                g_vis = "public"
+                t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                t.start()
+            elif re.match('^\d000$', str(ct)):
+                post_toot = " :@" + account['acct'] + ": @" + account['acct'] + "\n" + str(
+                    ct) + 'toot、おめでとうございます。'
+                g_vis = "public"
+                t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                t.start()
 
     def check01(status):  # アカウント情報の更新
         account = status["account"]
