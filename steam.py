@@ -92,10 +92,10 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 t.start()
 
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
-                if account["acct"] == "knzk":
-                    bot.knzk_fav += 1
-                    print("神崎にふぁぼられた数:" + bot.knzk_fav)
-                    if bot.knzk_fav == 10:
+                if account["acct"] == "Knzk":
+                    count.knzk_fav += 1
+                    print("神崎にふぁぼられた数:" + count.knzk_fav)
+                    if count.knzk_fav == 10:
                         f = codecs.open('res\\fav_knzk.txt', 'r', 'utf-8')
                         l = []
                         for x in f:
@@ -109,6 +109,9 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
+        except:
+            print("例外情報\n" + traceback.format_exc())
+            pass
 
 class local_res_toot(StreamListener):  # ここではLTLを監視する継承クラスになります。
     def on_update(self, status):  # StreamingAPIがリアルタイムにトゥート情報を吐き出してくれます。
@@ -142,7 +145,9 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
-        
+        except:
+            print("例外情報\n" + traceback.format_exc())
+            pass
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
         try:
@@ -483,7 +488,7 @@ class game():
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         in_reply_to_id = None
         if not count.toot_CT:
-            if re.compile('こおり(.*)おみくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(
+            if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(
                     re.sub("<p>|</p>", "", status['content'].translate(non_bmp_map))):
                 acc = status['account']
                 if acc['acct'] != "1":
