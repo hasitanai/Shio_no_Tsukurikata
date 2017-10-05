@@ -7,6 +7,7 @@ import re, sys, os, csv, json, codecs
 import threading, requests, random
 import requests
 from datetime import datetime
+from pytz import timezone
 import traceback
 
 """
@@ -34,7 +35,7 @@ mastodon = Mastodon(
 
 class Re1(): #Content整頓用関数
     def text(text):
-        return (re.sub('<p>|</p>|<a.+"tag">|<a.+"_blank">|<a.+mention">|<span>|</span>|</a>|<span class="[a-z]+">', "", str(text)))
+        return (re.sub('<p>|</p>|<a.+"tag">|<a.+"_blank">|<a.+mention">|<span>|</span>|</a>|<span class="[a-z-]+">', "", str(text)))
 
 class user_res_toot(StreamListener):  # ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
     def on_notification(self, notification):  # 通知を監視します。
@@ -101,7 +102,7 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
                 if account["acct"] == "Knzk":
                     count.knzk_fav += 1
-                    print("神崎にふぁぼられた数:" + count.knzk_fav)
+                    print("神崎にふぁぼられた数:" + str(count.knzk_fav))
                     if count.knzk_fav == 10:
                         f = codecs.open('res\\fav_knzk.txt', 'r', 'utf-8')
                         l = []
@@ -115,6 +116,8 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
         except Exception as e:
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.white(jst_now)
                 traceback.print_exc(file=f)
         except:
             print("例外情報\n" + traceback.format_exc())
