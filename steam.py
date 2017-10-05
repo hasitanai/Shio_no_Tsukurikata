@@ -119,8 +119,6 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
                 f.white(jst_now)
                 traceback.print_exc(file=f)
-        except:
-            print("例外情報\n" + traceback.format_exc())
             pass
 
 
@@ -157,8 +155,6 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
-        except:
-            print("例外情報\n" + traceback.format_exc())
             pass
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
@@ -436,12 +432,32 @@ class bot():
         print("◇tootの準備ができました")
 
     def t_local():  # listenerオブジェクトには監視させるものを（続く）
-        listener = local_res_toot()
-        mastodon.local_stream(listener)
-
+        try:
+            listener = local_res_toot()
+            mastodon.local_stream(listener)
+        except:
+            print("例外情報\n" + traceback.format_exc())
+            with open('except.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.white(jst_now)
+                traceback.print_exc(file=f)
+            sleep(60)
+            bot.t_local()
+            pass
+        
     def t_user():  # （続き）継承で組み込んだものを追加するようにします。
-        listener = user_res_toot()
-        mastodon.user_stream(listener)
+        try:
+            listener = user_res_toot()
+            mastodon.user_stream(listener)
+        except:
+            print("例外情報\n" + traceback.format_exc())
+            with open('except.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.white(jst_now)
+                traceback.print_exc(file=f)
+            sleep(60)
+            bot.t_user()
+            pass
 
     def t_forget():  # 同じ内容を連投しないためのクールタイムです。
         count.learn_toot = ""
