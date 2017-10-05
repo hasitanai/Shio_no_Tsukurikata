@@ -120,7 +120,8 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 f.white(jst_now)
                 traceback.print_exc(file=f)
             pass
-
+        print("   ")
+        pass
 
 class local_res_toot(StreamListener):  # ここではLTLを監視する継承クラスになります。
     def on_update(self, status):  # StreamingAPIがリアルタイムにトゥート情報を吐き出してくれます。
@@ -156,6 +157,8 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
             pass
+        print("   ")
+        pass
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
         try:
