@@ -442,7 +442,7 @@ class bot():
             print("例外情報\n" + traceback.format_exc())
             with open('except.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white(jst_now)
+                f.write(str(jst_now))
                 traceback.print_exc(file=f)
             sleep(60)
             bot.t_local()
@@ -456,7 +456,7 @@ class bot():
             print("例外情報\n" + traceback.format_exc())
             with open('except.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white(jst_now)
+                f.write(str(jst_now))
                 traceback.print_exc(file=f)
             sleep(60)
             bot.t_user()
@@ -476,7 +476,6 @@ class count():
     bals = f.read()
     bals = int(bals)
     f.close
-
 
 class game():
     def dice(inp):
