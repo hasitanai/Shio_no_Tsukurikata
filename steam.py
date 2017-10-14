@@ -2,13 +2,13 @@
 
 from mastodon import *
 from time import sleep
-import warnings
+import feedparser
 import re, sys, os, csv, json, codecs
 import threading, requests, random
 import requests
 from datetime import datetime
 from pytz import timezone
-import traceback
+import warnings, traceback
 
 """
 上記必要なものはpipしていってね！！！　多分Mastodon.pyとrequestsくらいかな？
@@ -112,7 +112,8 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                         m = len(l)
                         s = random.randint(1, m)
                         post_toot = (l[s - 1])
-                        bot.toot_res(post_toot)
+                        g_vis = "public"
+                        bot.toot_res(post_toot, g_vis)
         except Exception as e:
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
@@ -334,7 +335,7 @@ class bot():
         if re.compile("こおり(.*)[1-5][dD]\d+").search(content):
             print("○hitしました♪")
             account = status["account"]
-            post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
+            post_toot = "@" + str(account["acct"]) + "\n" + game.dice(content)
             g_vis = status["visibility"]
             t = threading.Timer(5, bot.toot, [post_toot, g_vis, None, None, "サイコロ振りますね。"])
             t.start()
@@ -369,19 +370,19 @@ class bot():
         if account["acct"] == "1":
             ct += 1
             if re.match('^\d+000$', str(ct)):
-                toot_now = str(ct) + 'toot、達成しました……！\n#こおりキリ番記念'
+                post_toot = str(ct) + 'toot、達成しました……！\n#こおりキリ番記念'
                 g_vis = "public"
                 t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
                 t.start()
         else:
             if re.match('^\d+0000$', str(ct)):
-                post_toot = " :@" + account['acct'] + ": @" + account['acct'] + "\n" + str(
+                post_toot = "@" + account['acct'] + "\n" + str(
                     ct) + 'toot、おめでとうございます！'
                 g_vis = "public"
                 t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
                 t.start()
             elif re.match('^\d000$', str(ct)):
-                post_toot = " :@" + account['acct'] + ": @" + account['acct'] + "\n" + str(
+                post_toot = "@" + account['acct'] + "\n" + str(
                     ct) + 'toot、おめでとうございます。'
                 g_vis = "public"
                 t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
@@ -476,6 +477,24 @@ class count():
     bals = f.read()
     bals = int(bals)
     f.close
+
+class RSS():
+    def rss(RSS_URL = "https://github.com/GenkaiDev/mastodon/commits/knzk-master.atom"):
+        rss_dic = feedparser.parse(RSS_URL)
+        #print(rss_dic.feed.title)
+        for entry in rss_dic.entries:
+            title = entry.title
+            link = entry.link
+            #print(link)
+            #print(title)
+        RSS.title = rss_dic.entries[0].title
+        RSS.link = rss_dic.entries[0].link
+
+    def main():
+        RSS.rss()
+        toot_now = RSS.title+"\n"+RSS.link
+        #    mastodon.status_post(status=toot_now, media_ids=media_files, visibility=unlisted)
+        mastodon.status_post(status=toot_now, visibility="public", spoiler_text="テストします")
 
 class game():
     def dice(inp):
@@ -582,7 +601,7 @@ class game():
             acc = status['account']
             if acc['acct'] != "1":
                 com = re.search("(.+)(開園)", content)
-                post_toot = com.group(1) + "閉園"
+                post_toot = re.sub('<span class="">','',com.group(1)) + "閉園"
                 ba = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
                 ba.start()
 
