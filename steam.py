@@ -5,17 +5,19 @@ from time import sleep
 import feedparser
 import re, sys, os, csv, json, codecs
 import threading, requests, random
-import requests
 from datetime import datetime
 from pytz import timezone
 import warnings, traceback
 
 """
-上記必要なものはpipしていってね！！！　多分Mastodon.pyとrequestsくらいかな？
+上記必要なものはpipしていってね！！！
+多分Mastodon.pyとrequestsくらいかな？
 reは正規表現検索用　sysとjsonは多分何かの基盤
 threadingはマルチ稼働のため　csvはトゥート保管のデータ形式のため。
 codecsは文字化け処理用。　randomは文字通りランダムにするためのもの。
-osフォルダ参照用。tracebackはエラー報告のデバック用。warningsは……分からん！！！！
+osフォルダ参照用。tracebackはエラー報告のデバック用。
+datetime, timezoneは時間記録用。
+warningsは……分からん！！！！
 今後入れる予定のモジュ「Numpy」
 """
 
@@ -445,7 +447,7 @@ class bot():
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
                 f.write(str(jst_now))
                 traceback.print_exc(file=f)
-            sleep(60)
+            sleep(180)
             bot.t_local()
             pass
         
@@ -459,7 +461,7 @@ class bot():
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
                 f.write(str(jst_now))
                 traceback.print_exc(file=f)
-            sleep(60)
+            sleep(180)
             bot.t_user()
             pass
 
