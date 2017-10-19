@@ -45,10 +45,11 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
             print("===●user_on_notification●===")
             account = notification["account"]
             non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-            print((re.sub("<p>|</p>", "",
-                          str(account["display_name"]).translate(non_bmp_map) + "@" + str(account["acct"]).translate(
-                              non_bmp_map))))
+            print(
+                account["display_name"].translate(non_bmp_map) + "@" + str(account["acct"]).translate(
+                    non_bmp_map))
             print(notification["type"])
+            
             if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
                 sleep(2)
                 mastodon.account_follow(account["id"])
@@ -62,7 +63,8 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 print(content.translate(non_bmp_map))
                 print(mentions.translate(non_bmp_map))
                 if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
-                    post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(count.twotwo) + "回鳴きました。"
+                    post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(
+                        count.twotwo) + "回鳴きました。"
                     g_vis = status["visibility"]
                     sec = 5
                 elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(content):
@@ -134,9 +136,9 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             mentions = Re1.text(status["mentions"])
             content = Re1.text(status["content"])
             non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-            print((re.sub("<p>|</p>", "",
-                          str(account["display_name"]).translate(non_bmp_map) + "@" + str(account["acct"]).translate(
-                              non_bmp_map))))
+            print(str(account["display_name"]).translate(
+                non_bmp_map) + "@" + str(account["acct"]).translate(
+                    non_bmp_map))
             print(content.translate(non_bmp_map))
             print(mentions.translate(non_bmp_map))
             print("   ")
