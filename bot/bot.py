@@ -10,15 +10,6 @@ from pytz import timezone
 import traceback
 import Re1
 
-class count():
-    knzk_fav = 0
-    toot_CT = False
-    learn_toot = ""
-    twotwo = 0
-    f = codecs.open('game\\bals.txt', 'r', 'utf-8')
-    bals = f.read()
-    bals = int(bals)
-    f.close
 
 def mention(status):
     account = status["account"]
@@ -26,6 +17,8 @@ def mention(status):
     content = Re1.text(status["content"])
     print(content.translate(non_bmp_map))
     print(mentions.translate(non_bmp_map))
+    media_files = None
+    spoiler_text = None
     if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
         post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(count.twotwo) + "回鳴きました。"
         g_vis = status["visibility"]
@@ -63,11 +56,11 @@ def mention(status):
         g_vis = status["visibility"]
         sec = 5
     in_reply_to_id = status["id"]
-    t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
-    t.start()
+    return sec, post_toot, g_vis, in_reply_to_id, media_files, spoiler_text
 
 
 def favourite(status):
+    account = status["account"]
     if account["acct"] == "Knzk":
         count.knzk_fav += 1
         print("神崎にふぁぼられた数:" + str(count.knzk_fav))

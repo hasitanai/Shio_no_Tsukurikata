@@ -3,13 +3,13 @@
 from mastodon import *
 from time import sleep
 import feedparser
-import re, sys, os, csv, json, codecs
+import re, sys, os, csv, json, codecs, io
 import threading, requests, random
 from datetime import datetime
 from pytz import timezone
+from xml.sax.saxutils import unescape as unesc
 import warnings, traceback
 
-import kooribot as koori
 
 """
 上記必要なものはpipしていってね！！！
@@ -23,7 +23,15 @@ warningsは……分からん！！！！
 今後入れる予定のモジュ「Numpy」
 """
 
+"""
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
+                              encoding=sys.stdout.encoding,
+                              errors='backslashreplace',
+                              line_buffering=sys.stdout.line_buffering)
+"""
+
 warnings.simplefilter("ignore", UnicodeWarning)
+
 
 """
 ログイントークン取得済みで動かしてね（*'∀'人）
@@ -37,21 +45,45 @@ mastodon = Mastodon(
     access_token="auth.txt",
     api_base_url=url_ins)  # インスタンス
 
+
 class Re1():  # Content整頓用関数
     def text(text):
-        return (re.sub('<p>|</p>|<a.+"tag">|<a.+"_blank">|<a.+mention">|<span>|</span>|</a>|<span class="[a-z-]+">',
-                       "",str(text)))
+        return (re.sub('<p>|</p>|<a.+"tag">|<a.+"_blank">|<a.+mention">|<span>|<'
+                       '/span>|</a>|<span class="[a-z-]+">', "", str(text)))
 
 
-class user_res_toot(StreamListener):  # ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
+class Log():  # toot記録用クラス٩(๑❛ᴗ❛๑)۶
+    def __init__(self, status):
+        self.account = status["account"]
+        self.mentions = status["mentions"]
+        self.content = unsec(Re1.text(status["content"]))
+        self.non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+
+    def read(self):
+        name = self.account["display_name"]
+        acct = self.account["acct"]
+        non_bmp_map = self.non_bmp_map
+        print(str(name).translate(non_bmp_map) + "@" + str(
+            acct).translate(self.non_bmp_map))
+        print(str(self.content).translate(non_bmp_map))
+        print(str(self.mentions).translate(non_bmp_map))
+
+    def write(self):
+        text = self.content
+        acct = self.account["acct"]
+
+        f = codecs.open('log\\' + 'log_' + nowing + '.txt', 'a', 'UTF-8')
+        f.write(re.sub('<br />', '\\n', str(text)) + ',<acct="' + acct + '">\r\n')
+        f.close()
+
+
+class User(StreamListener):  # ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
     def on_notification(self, notification):  # 通知を監視します。
+        import bot as koori
         try:
-            print("===●user_on_notification●===")
-            account = notification["account"]
-            non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-            print((re.sub("<p>|</p>", "",
-                          str(account["display_name"]).translate(non_bmp_map) + "@" + str(account["acct"]).translate(
-                              non_bmp_map))))
+            print(("===●user_on_notification{}●===").format(str(notification["type"])))
+            status = notification["status"]
+
             print(notification["type"])
             if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
                 sleep(2)
@@ -59,25 +91,17 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 print("◇フォローを返しました。")
 
             elif notification["type"] == "mention":  # 通知がリプだった場合です。
-                sec, post_toot, g_vis, in_reply_to_id = koori.mention(notification["status"])
-                t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
-                t.start()
+                log = threading.Thread(Log(status).read())
+                log.run()
+                sec, post_toot, g_vis, in_reply_to_id, media_files, spoiler_text = koori.bot.mention(
+                    notification["status"])
+                if post_toot:
+                    t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, media_files, spoiler_text])
+                    t.start()
 
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
-                if account["acct"] == "Knzk":
-                    count.knzk_fav += 1
-                    print("神崎にふぁぼられた数:" + str(count.knzk_fav))
-                    if count.knzk_fav == 10:
-                        f = codecs.open('res\\fav_knzk.txt', 'r', 'utf-8')
-                        l = []
-                        for x in f:
-                            l.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                        f.close()
-                        m = len(l)
-                        s = random.randint(1, m)
-                        post_toot = (l[s - 1])
-                        g_vis = "public"
-                        bot.toot_res(post_toot, g_vis)
+                koori.bot.favourite(status)
+
             else:
                 pass
 
@@ -89,25 +113,18 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 traceback.print_exc(file=f)
             pass
         print("   ")
+        del sys.modules['koori']
         pass
 
 
-class local_res_toot(StreamListener):  # ここではLTLを監視する継承クラスになります。
+class Local(StreamListener):  # ここではLTLを監視する継承クラスになります。
     def on_update(self, status):  # StreamingAPIがリアルタイムにトゥート情報を吐き出してくれます。
+        import bot as koori
         try:
-            print("===○local_on_update○===")
-            account = status["account"]
-            mentions = Re1.text(status["mentions"])
-            content = Re1.text(status["content"])
-            non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-            print((re.sub("<p>|</p>", "",
-                          str(account["display_name"]).translate(non_bmp_map) + "@" + str(account["acct"]).translate(
-                              non_bmp_map))))
-            print(content.translate(non_bmp_map))
-            print(mentions.translate(non_bmp_map))
-            print("   ")
+            log = threading.Thread(Log(status).read())
+            log.run()
             global mastodon
-            koori.LTL(status, mastodon)
+            bot.bot.LTL(status, mastodon)
             pass
         except Exception as e:
             print("エラー情報\n" + traceback.format_exc())
@@ -115,17 +132,21 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
                 traceback.print_exc(file=f)
             pass
         print("   ")
+        del sys.modules['koori']
         pass
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
         try:
             print("===×on_delete×===")
             print(status_id)
+            print("   ")
             pass
         except Exception as e:
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
+        print("   ")
+        pass
 
 
 class bot():
@@ -141,18 +162,6 @@ class bot():
     def rets(self, sec, post_toot, g_vis, med=None, rep=None, spo=None):
         t = threading.Timer(sec, bot.toot, [post_toot, g_vis, rep, med, spo])
         t.start()
-
-    def toot_res(post_toot, g_vis, in_reply_to_id=None, media_files=None,
-                  spoiler_text=None):  # Postする内容が決まったらtoot関数に渡します。
-        # その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
-        if count.learn_toot != post_toot:
-            count.learn_toot = post_toot
-            bot.rets(post_toot, g_vis, in_reply_to_id, media_files, spoiler_text)
-            t = threading.Timer(2, bot.time_res)
-            t.start()
-            count.toot_CT = True
-            z = threading.Timer(60, bot.t_forget)  # クールタイム伸ばした。
-            z.start()
 
     def fav_now(status):  # ニコります
         fav = status["id"]
@@ -170,7 +179,7 @@ class bot():
 
     def t_local():  # listenerオブジェクトには監視させるものを（続く）
         try:
-            listener = local_res_toot()
+            listener = Local()
             mastodon.local_stream(listener)
         except:
             print("例外情報\n" + traceback.format_exc())
@@ -184,7 +193,7 @@ class bot():
 
     def t_user():  # （続き）継承で組み込んだものを追加するようにします。
         try:
-            listener = user_res_toot()
+            listener = User()
             mastodon.user_stream(listener)
         except:
             print("例外情報\n" + traceback.format_exc())
@@ -212,10 +221,14 @@ class count():
     f.close
 
 
+def reload():
+    pass
+
+
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
     count()
-    uuu = threading.Timer(0, bot.t_local)
+    uuu = threading.Thread(target=bot.t_local)
     uuu.start()
-    lll = threading.Timer(0, bot.t_user)
+    lll = threading.Thread(target=bot.t_user)
     lll.start()
