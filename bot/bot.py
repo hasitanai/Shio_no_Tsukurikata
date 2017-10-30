@@ -509,6 +509,16 @@ class game():
                 ba = threading.Timer(0, bot.toot, [post_toot, "public", None, None, None])
                 ba.start()
 
+class count():
+    knzk_fav = 0
+    toot_CT = False
+    learn_toot = ""
+    twotwo = 0
+    f = codecs.open('game\\bals.txt', 'r', 'utf-8')
+    bals = f.read()
+    bals = int(bals)
+    f.close
+
 
 """
 「mastodon.」メソッドを下記の関数によって「ホーム」「連合」「ローカル」「指定のハッシュタグ」が選択できます

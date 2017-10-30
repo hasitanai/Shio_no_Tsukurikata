@@ -2,7 +2,6 @@
 
 from mastodon import *
 from time import sleep
-import feedparser
 import re, sys, os, csv, json, codecs, io
 import threading, requests, random
 from datetime import datetime
@@ -56,7 +55,7 @@ class Log():  # toot記録用クラス٩(๑❛ᴗ❛๑)۶
     def __init__(self, status):
         self.account = status["account"]
         self.mentions = status["mentions"]
-        self.content = unsec(Re1.text(status["content"]))
+        self.content = unesc(Re1.text(status["content"]))
         self.non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
 
     def read(self):
@@ -113,7 +112,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                 traceback.print_exc(file=f)
             pass
         print("   ")
-        del sys.modules['koori']
+        del sys.modules['bot']
         pass
 
 
@@ -124,7 +123,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             log = threading.Thread(Log(status).read())
             log.run()
             global mastodon
-            bot.bot.LTL(status, mastodon)
+            koori.LTL(status, mastodon)
             pass
         except Exception as e:
             print("エラー情報\n" + traceback.format_exc())
@@ -132,7 +131,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
                 traceback.print_exc(file=f)
             pass
         print("   ")
-        del sys.modules['koori']
+        del sys.modules['bot']
         pass
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
