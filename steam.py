@@ -2,8 +2,9 @@
 
 from mastodon import *
 from time import sleep
+from time import time
 import feedparser
-import re, sys, os, csv, json, codecs
+import re, sys, os, csv, json, codecs, io
 import threading, requests, random
 from datetime import datetime
 from pytz import timezone
@@ -20,8 +21,14 @@ datetime, timezoneは時間記録用。
 warningsは……分からん！！！！
 今後入れる予定のモジュ「Numpy」
 """
-
+"""
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
+                              encoding=sys.stdout.encoding,
+                              errors='backslashreplace',
+                              line_buffering=sys.stdout.line_buffering)
+"""
 warnings.simplefilter("ignore", UnicodeWarning)
+
 
 """
 ログイントークン取得済みで動かしてね（*'∀'人）
@@ -142,20 +149,8 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             print(content.translate(non_bmp_map))
             print(mentions.translate(non_bmp_map))
             print("   ")
-            bot.check01(status)
-            bot.fav01(status)
-            bot.res01(status)
-            bot.res02(status)  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
-            bot.res03(status)  # もっとここは上手くスマートに出来ると思うけどゴリ押し（はぁと
-            bot.res04(status)
-            bot.res05(status)
-            bot.res06(status)
-            game.omikuji(status)
-            game.land(status)
-            bot.check02(status)
-            bot.check03(status)
-            bot.check00(status)
-            bot.twotwo(status)
+            ltl = threading.Thread(LTL.LTL(status))
+            ltl.run()
             pass
         except Exception as e:
             print("エラー情報\n" + traceback.format_exc())
@@ -174,6 +169,24 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
+
+class LTL():
+    def LTL(status):  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
+            bot.check01(status)
+            bot.fav01(status)
+            bot.res01(status)
+            bot.res02(status)  
+            bot.res03(status)  
+            bot.res04(status)
+            bot.res05(status)
+            bot.res06(status)
+            game.omikuji(status)
+            game.land(status)
+            bot.EFB(status)
+            bot.check02(status)
+            bot.check03(status)
+            bot.check00(status)
+            bot.twotwo(status)
 
 
 class bot():
@@ -310,11 +323,14 @@ class bot():
                         t1 = threading.Timer(3, bot.toot, [post_toot, "public", None, None, None])
                         t1.start()
                 else:
+                    """
                     print("◇Hit")
                     post_toot = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
                     g_vis = "public"
                     t1 = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
                     t1.start()
+                    """
+                    pass
             except:
                 f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
                 f.write("active")
@@ -358,9 +374,34 @@ class bot():
             else:
                 pass
 
+    def BellBaku(fav):
+        s = time()
+        while 1:
+            e = time()
+            t = e-s
+            if t >= 5:
+                mastodon.status_favourite(fav)
+                break
+            else:
+                mastodon.status_favourite(fav)
+                mastodon.status_unfavourite(fav)
+
+    def EFB(status):
+        content = Re1.text(status["content"])
+        account = status["account"]
+        if account["acct"] != "1":
+            if re.compile("エターナルフォースブリザード|えたーなるふぉーすぶりざーど").search(content):
+                fav = status["id"]
+                post_toot = "@" + account["acct"] + " エターナルフォースブリザード……！！"
+                in_reply_to_id = status["id"]
+                t1 = threading.Timer(3, bot.toot, [post_toot, "public", in_reply_to_id, None, None])
+                t1.start()
+                t2 = threading.Timer(3, bot.BellBaku, [fav])
+                t2.start()
+
     def fav_now(status):  # ニコります
         fav = status["id"]
-        mastodon.status_favourite(fav)
+        
         print("◇Fav")
 
     def reb_now(status):  # ブーストします
