@@ -29,7 +29,6 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
 """
 warnings.simplefilter("ignore", UnicodeWarning)
 
-
 """
 ログイントークン取得済みで動かしてね（*'∀'人）
 自分はこちらの記事を参照しましたのでアクセストークン各自で取ってね(*'ω'*)
@@ -42,9 +41,12 @@ mastodon = Mastodon(
     access_token="auth.txt",
     api_base_url=url_ins)  # インスタンス
 
-class Re1(): #Content整頓用関数
+
+class Re1():  # Content整頓用関数
     def text(text):
-        return (re.sub('<p>|</p>|<a.+"tag">|<a.+"_blank">|<a.+mention">|<span>|</span>|</a>|<span class="[a-z-]+">', "", str(text)))
+        return (re.sub('<p>|</p>|<a.+"tag">|<a.+"_blank">|<a.+mention">|<span>|</span>|</a>|<span class="[a-z-]+">', "",
+                       str(text)))
+
 
 class user_res_toot(StreamListener):  # ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
     def on_notification(self, notification):  # 通知を監視します。
@@ -56,7 +58,7 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 account["display_name"].translate(non_bmp_map) + "@" + str(account["acct"]).translate(
                     non_bmp_map))
             print(notification["type"])
-            
+
             if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
                 sleep(2)
                 mastodon.account_follow(account["id"])
@@ -135,6 +137,7 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
         print("   ")
         pass
 
+
 class local_res_toot(StreamListener):  # ここではLTLを監視する継承クラスになります。
     def on_update(self, status):  # StreamingAPIがリアルタイムにトゥート情報を吐き出してくれます。
         try:
@@ -145,7 +148,7 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
             print(str(account["display_name"]).translate(
                 non_bmp_map) + "@" + str(account["acct"]).translate(
-                    non_bmp_map))
+                non_bmp_map))
             print(content.translate(non_bmp_map))
             print(mentions.translate(non_bmp_map))
             print("   ")
@@ -170,23 +173,24 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
 
+
 class LTL():
     def LTL(status):  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
-            bot.check01(status)
-            bot.fav01(status)
-            bot.res01(status)
-            bot.res02(status)  
-            bot.res03(status)  
-            bot.res04(status)
-            bot.res05(status)
-            bot.res06(status)
-            game.omikuji(status)
-            game.land(status)
-            bot.EFB(status)
-            bot.check02(status)
-            bot.check03(status)
-            bot.check00(status)
-            bot.twotwo(status)
+        bot.check01(status)
+        bot.fav01(status)
+        bot.res01(status)
+        bot.res02(status)
+        bot.res03(status)
+        bot.res04(status)
+        bot.res05(status)
+        bot.res06(status)
+        game.omikuji(status)
+        game.land(status)
+        bot.EFB(status)
+        bot.check02(status)
+        bot.check03(status)
+        bot.check00(status)
+        bot.twotwo(status)
 
 
 class bot():
@@ -201,7 +205,7 @@ class bot():
 
     def toot_res(post_toot, g_vis, in_reply_to_id=None,
                  media_files=None, spoiler_text=None):  # Postする内容が決まったらtoot関数に渡します。
-        #その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
+        # その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
         g_vis = g_vis
         in_reply_to_id = in_reply_to_id
         media_files = media_files
@@ -378,7 +382,7 @@ class bot():
         s = time()
         while 1:
             e = time()
-            t = e-s
+            t = e - s
             if t >= 5:
                 mastodon.status_favourite(fav)
                 break
@@ -401,7 +405,7 @@ class bot():
 
     def fav_now(status):  # ニコります
         fav = status["id"]
-        
+
         print("◇Fav")
 
     def reb_now(status):  # ブーストします
@@ -493,7 +497,7 @@ class bot():
             sleep(180)
             bot.t_local()
             pass
-        
+
     def t_user():  # （続き）継承で組み込んだものを追加するようにします。
         try:
             listener = user_res_toot()
@@ -523,23 +527,25 @@ class count():
     bals = int(bals)
     f.close
 
+
 class RSS():
-    def rss(RSS_URL = "https://github.com/GenkaiDev/mastodon/commits/knzk-master.atom"):
+    def rss(RSS_URL="https://github.com/GenkaiDev/mastodon/commits/knzk-master.atom"):
         rss_dic = feedparser.parse(RSS_URL)
-        #print(rss_dic.feed.title)
+        # print(rss_dic.feed.title)
         for entry in rss_dic.entries:
             title = entry.title
             link = entry.link
-            #print(link)
-            #print(title)
+            # print(link)
+            # print(title)
         RSS.title = rss_dic.entries[0].title
         RSS.link = rss_dic.entries[0].link
 
     def main():
         RSS.rss()
-        toot_now = RSS.title+"\n"+RSS.link
+        toot_now = RSS.title + "\n" + RSS.link
         #    mastodon.status_post(status=toot_now, media_ids=media_files, visibility=unlisted)
         mastodon.status_post(status=toot_now, visibility="public", spoiler_text="テストします")
+
 
 class game():
     def dice(inp):
@@ -646,7 +652,7 @@ class game():
             acc = status['account']
             if acc['acct'] != "1":
                 com = re.search("(.+)(開園)", content)
-                post_toot = re.sub('<span class="">','',com.group(1)) + "閉園"
+                post_toot = re.sub('<span class="">', '', com.group(1)) + "閉園"
                 ba = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
                 ba.start()
 

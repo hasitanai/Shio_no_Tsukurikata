@@ -10,6 +10,15 @@ from pytz import timezone
 import traceback
 import Re1
 
+class count():
+    knzk_fav = 0
+    toot_CT = False
+    learn_toot = ""
+    twotwo = 0
+    f = codecs.open('game\\bals.txt', 'r', 'utf-8')
+    bals = f.read()
+    bals = int(bals)
+    f.close
 
 def mention(status):
     account = status["account"]
@@ -17,8 +26,6 @@ def mention(status):
     content = Re1.text(status["content"])
     print(content.translate(non_bmp_map))
     print(mentions.translate(non_bmp_map))
-    media_files = None
-    spoiler_text = None
     if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
         post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(count.twotwo) + "回鳴きました。"
         g_vis = status["visibility"]
@@ -56,7 +63,8 @@ def mention(status):
         g_vis = status["visibility"]
         sec = 5
     in_reply_to_id = status["id"]
-    return sec, post_toot, g_vis, in_reply_to_id, media_files, spoiler_text
+    t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
+    t.start()
 
 
 def favourite(status):
@@ -78,7 +86,8 @@ def favourite(status):
 
 
 def LTL(status, mastodon):
-    bot.mastodon = mastodon
+    global mastodon
+    mastodon = mastodon
     bot.check01(status)
     bot.fav01(status)
     bot.res01(status)
@@ -96,9 +105,10 @@ def LTL(status, mastodon):
 
 
 class bot():
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.in_reply_to_id = None
         self.media_files = None
+        mastodon
 
     def toot(post_toot, g_vis="public", in_reply_to_id=None, media_files=None, spoiler_text=None):  # トゥートする関数処理だよ！
         print(in_reply_to_id)
@@ -508,16 +518,6 @@ class game():
                 post_toot = "[large=2x][color=red]目がぁぁぁ、目がぁぁぁ！x" + str(count.bals) + "[/color][/large]"
                 ba = threading.Timer(0, bot.toot, [post_toot, "public", None, None, None])
                 ba.start()
-
-class count():
-    knzk_fav = 0
-    toot_CT = False
-    learn_toot = ""
-    twotwo = 0
-    f = codecs.open('game\\bals.txt', 'r', 'utf-8')
-    bals = f.read()
-    bals = int(bals)
-    f.close
 
 
 """

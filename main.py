@@ -22,12 +22,12 @@ warningsは……分からん！！！！
 今後入れる予定のモジュ「Numpy」
 """
 
-"""
+
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
                               encoding=sys.stdout.encoding,
                               errors='backslashreplace',
                               line_buffering=sys.stdout.line_buffering)
-"""
+
 
 warnings.simplefilter("ignore", UnicodeWarning)
 
@@ -43,6 +43,7 @@ mastodon = Mastodon(
     client_id="cred.txt",
     access_token="auth.txt",
     api_base_url=url_ins)  # インスタンス
+print("こおり「ログイン、完了しました。」")
 
 
 class Re1():  # Content整頓用関数
@@ -187,7 +188,7 @@ class bot():
                 f.write(str(jst_now))
                 traceback.print_exc(file=f)
             sleep(180)
-            bot.t_local()
+            re_local()
             pass
 
     def t_user():  # （続き）継承で組み込んだものを追加するようにします。
@@ -201,7 +202,7 @@ class bot():
                 f.write(str(jst_now))
                 traceback.print_exc(file=f)
             sleep(180)
-            bot.t_user()
+            re_user()
             pass
 
     def t_forget():  # 同じ内容を連投しないためのクールタイムです。
@@ -218,6 +219,16 @@ class count():
     bals = f.read()
     bals = int(bals)
     f.close
+
+
+def re_local():
+    uuu = threading.Thread(target=bot.t_local)
+    uuu.start()
+
+
+def re_user():
+    lll = threading.Thread(target=bot.t_user)
+    lll.start()
 
 
 def reload():
