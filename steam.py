@@ -21,12 +21,12 @@ datetime, timezoneは時間記録用。
 warningsは……分からん！！！！
 今後入れる予定のモジュ「Numpy」
 """
-"""
+
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
                               encoding=sys.stdout.encoding,
                               errors='backslashreplace',
                               line_buffering=sys.stdout.line_buffering)
-"""
+
 warnings.simplefilter("ignore", UnicodeWarning)
 
 """
@@ -40,6 +40,7 @@ mastodon = Mastodon(
     client_id="cred.txt",
     access_token="auth.txt",
     api_base_url=url_ins)  # インスタンス
+print("こおり「ログイン、完了しました。」")
 
 
 class Re1():  # Content整頓用関数
@@ -66,51 +67,7 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
 
             elif notification["type"] == "mention":  # 通知がリプだった場合です。
                 status = notification["status"]
-                account = status["account"]
-                mentions = Re1.text(status["mentions"])
-                content = Re1.text(status["content"])
-                print(content.translate(non_bmp_map))
-                print(mentions.translate(non_bmp_map))
-                if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
-                    post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(
-                        count.twotwo) + "回鳴きました。"
-                    g_vis = status["visibility"]
-                    sec = 5
-                elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(content):
-                    post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
-                    g_vis = status["visibility"]
-                    sec = 5
-                elif re.compile("\d+[dD]\d+").search(content):
-                    coro = (re.sub("@1", "", str(content)))
-                    post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
-                    g_vis = status["visibility"]
-                    sec = 5
-                elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(content):
-                    post_toot, sec = game.aram(status)
-                    g_vis = status["visibility"]
-                elif re.compile('みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(
-                        content.translate(non_bmp_map)):
-                    print("◇Hit")
-                    post_toot = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
-                    g_vis = status["visibility"]
-                    sec = 5
-                else:
-                    global api_Bot
-                    url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
-                    s = requests.session()
-                    mes = (re.sub("<p>|</p>", "", str(content)))
-                    params = {
-                        'key': api_Bot,  # 登録するとAPIKeyがもらえますのでここに入れます。
-                        'message': mes,
-                    }
-                    r = s.post(url, params=params)
-                    ans = json.loads(r.text)
-                    post_toot = "@" + str(account["acct"]) + " " + ans["result"]
-                    g_vis = status["visibility"]
-                    sec = 5
-                in_reply_to_id = status["id"]
-                t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
-                t.start()
+                Men.mention(status)
 
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
                 if account["acct"] == "Knzk":
@@ -172,6 +129,56 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
+
+
+class Men():
+    def mention(status):
+        account = status["account"]
+        mentions = Re1.text(status["mentions"])
+        content = Re1.text(status["content"])
+        non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+        print(content.translate(non_bmp_map))
+        print(mentions.translate(non_bmp_map))
+        if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
+            post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(
+                count.twotwo) + "回鳴きました。"
+            g_vis = status["visibility"]
+            sec = 5
+        elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(content):
+            post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
+            g_vis = status["visibility"]
+            sec = 5
+        elif re.compile("\d+[dD]\d+").search(content):
+            coro = (re.sub("@1", "", str(content)))
+            post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
+            g_vis = status["visibility"]
+            sec = 5
+        elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(content):
+            post_toot, sec = game.aram(status)
+            g_vis = status["visibility"]
+        elif re.compile('みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(
+                content.translate(non_bmp_map)):
+            print("◇Hit")
+            post_toot = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+            g_vis = status["visibility"]
+            sec = 5
+        else:
+            global api_Bot
+            url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
+            s = requests.session()
+            mes = (re.sub("<p>|</p>", "", str(content)))
+            params = {
+                'key': api_Bot,  # 登録するとAPIKeyがもらえますのでここに入れます。
+                'message': mes,
+            }
+            r = s.post(url, params=params)
+            ans = json.loads(r.text)
+            post_toot = "@" + str(account["acct"]) + " " + ans["result"]
+            g_vis = status["visibility"]
+            sec = 5
+        in_reply_to_id = status["id"]
+        t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
+        t.start()
 
 
 class LTL():
