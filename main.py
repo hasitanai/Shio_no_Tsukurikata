@@ -177,34 +177,6 @@ class bot():
         count.toot_CT = False
         print("◇tootの準備ができました")
 
-    def t_local():  # listenerオブジェクトには監視させるものを（続く）
-        try:
-            listener = Local()
-            mastodon.local_stream(listener)
-        except:
-            print("例外情報\n" + traceback.format_exc())
-            with open('except.log', 'a') as f:
-                jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.write(str(jst_now))
-                traceback.print_exc(file=f)
-            sleep(180)
-            re_local()
-            pass
-
-    def t_user():  # （続き）継承で組み込んだものを追加するようにします。
-        try:
-            listener = User()
-            mastodon.user_stream(listener)
-        except:
-            print("例外情報\n" + traceback.format_exc())
-            with open('except.log', 'a') as f:
-                jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.write(str(jst_now))
-                traceback.print_exc(file=f)
-            sleep(180)
-            re_user()
-            pass
-
     def t_forget():  # 同じ内容を連投しないためのクールタイムです。
         count.learn_toot = ""
         print("◇前のトゥート内容を忘れました")
@@ -219,16 +191,45 @@ class count():
     bals = f.read()
     bals = int(bals)
     f.close
+    pass
 
 
-def re_local():
-    uuu = threading.Thread(target=bot.t_local)
-    uuu.start()
+class Loading():
+    def go_local():  # listenerオブジェクトには監視させるものを（続く）
+        try:
+            listener = local()
+            mastodon.local_stream(listener)
+        except:
+            print("例外情報\n" + traceback.format_exc())
+            with open('except.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.write(str(jst_now))
+                traceback.print_exc(file=f)
+            sleep(180)
+            bot.t_local()
+            pass
 
+    def go_user():  # （続き）継承で組み込んだものを追加するようにします。
+        try:
+            listener = user()
+            mastodon.user_stream(listener)
+        except:
+            print("例外情報\n" + traceback.format_exc())
+            with open('except.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.write(str(jst_now))
+                traceback.print_exc(file=f)
+            sleep(180)
+            bot.t_user()
+            pass
 
-def re_user():
-    lll = threading.Thread(target=bot.t_user)
-    lll.start()
+    def re_local():
+        uuu = threading.Thread(target=Loding.go_local)
+        uuu.start()
+
+    def re_user():
+        lll = threading.Thread(target=Loding.go_user)
+        lll.start()
 
 
 def reload():
@@ -238,7 +239,7 @@ def reload():
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
     count()
-    uuu = threading.Thread(target=bot.t_local)
+    uuu = threading.Timer(0, Loding.go_local)
     uuu.start()
-    lll = threading.Thread(target=bot.t_user)
+    lll = threading.Timer(0, Loding.go_user)
     lll.start()
