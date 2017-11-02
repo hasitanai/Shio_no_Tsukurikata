@@ -9,6 +9,8 @@ import threading, requests, random
 from datetime import datetime
 from pytz import timezone
 import warnings, traceback
+from xml.sax.saxutils import unescape as unesc
+import numpy as np
 
 """
 上記必要なものはpipしていってね！！！
@@ -40,6 +42,7 @@ mastodon = Mastodon(
     client_id="cred.txt",
     access_token="auth.txt",
     api_base_url=url_ins)  # インスタンス
+
 print("こおり「ログイン、完了しました。」")
 
 
@@ -49,16 +52,36 @@ class Re1():  # Content整頓用関数
                        str(text)))
 
 
-class user_res_toot(StreamListener):  # ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
+class Log():  # toot記録用クラス٩(๑❛ᴗ❛๑)۶
+    def __init__(self, status):
+        self.account = status["account"]
+        self.mentions = status["mentions"]
+        self.content = unesc(Re1.text(status["content"]))
+        self.non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+
+    def read(self):
+        name = self.account["display_name"]
+        acct = self.account["acct"]
+        non_bmp_map = self.non_bmp_map
+        print(str(name).translate(non_bmp_map) + "@" + str(
+            acct).translate(self.non_bmp_map))
+        print(str(self.content).translate(non_bmp_map))
+        print(str(self.mentions).translate(non_bmp_map))
+
+    def write(self):
+        text = self.content
+        acct = self.account["acct"]
+
+        f = codecs.open('log\\' + 'log_' + nowing + '.txt', 'a', 'UTF-8')
+        f.write(re.sub('<br />', '\\n', str(text)) + ',<acct="' + acct + '">\r\n')
+        f.close()
+
+
+class User(StreamListener):  # ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
     def on_notification(self, notification):  # 通知を監視します。
         try:
-            print("===●user_on_notification●===")
-            account = notification["account"]
-            non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-            print(
-                account["display_name"].translate(non_bmp_map) + "@" + str(account["acct"]).translate(
-                    non_bmp_map))
-            print(notification["type"])
+            print(("===●user_on_notification{}●===").format(str(notification["type"])))
+            status = notification["status"]
 
             if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
                 sleep(2)
@@ -66,8 +89,9 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
                 print("◇フォローを返しました。")
 
             elif notification["type"] == "mention":  # 通知がリプだった場合です。
-                status = notification["status"]
-                Men.mention(status)
+                log = threading.Thread(Log(status).read())
+                log.run()
+                men.mention(status)
 
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
                 if account["acct"] == "Knzk":
@@ -95,21 +119,13 @@ class user_res_toot(StreamListener):  # ホームでフォローした人と通�
         pass
 
 
-class local_res_toot(StreamListener):  # ここではLTLを監視する継承クラスになります。
+class Local(StreamListener):  # ここではLTLを監視する継承クラスになります。
     def on_update(self, status):  # StreamingAPIがリアルタイムにトゥート情報を吐き出してくれます。
         try:
             print("===○local_on_update○===")
-            account = status["account"]
-            mentions = Re1.text(status["mentions"])
-            content = Re1.text(status["content"])
-            non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-            print(str(account["display_name"]).translate(
-                non_bmp_map) + "@" + str(account["acct"]).translate(
-                non_bmp_map))
-            print(content.translate(non_bmp_map))
-            print(mentions.translate(non_bmp_map))
-            print("   ")
-            ltl = threading.Thread(LTL.LTL(status))
+            log = threading.Thread(Log(status).read())
+            log.run()
+            ltl = threading.Thread(TL.local(status))
             ltl.run()
             pass
         except Exception as e:
@@ -131,7 +147,7 @@ class local_res_toot(StreamListener):  # ここではLTLを監視する継承ク
                 traceback.print_exc(file=f)
 
 
-class Men():
+class men():  # メンションに対する処理です。
     def mention(status):
         account = status["account"]
         mentions = Re1.text(status["mentions"])
@@ -181,23 +197,26 @@ class Men():
         t.start()
 
 
-class LTL():
-    def LTL(status):  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
-        bot.check01(status)
-        bot.fav01(status)
-        bot.res01(status)
-        bot.res02(status)
-        bot.res03(status)
-        bot.res04(status)
-        bot.res05(status)
-        bot.res06(status)
+class TL():
+    def local(status):  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
+        check.check01(status)
+        res.fav01(status)
+        res.res01(status)
+        res.res02(status)
+        res.res03(status)
+        res.res04(status)
+        res.res05(status)
+        res.res06(status)
         game.omikuji(status)
         game.land(status)
-        bot.EFB(status)
-        bot.check02(status)
-        bot.check03(status)
-        bot.check00(status)
-        bot.twotwo(status)
+        res.EFB(status)
+        check.check02(status)
+        check.check03(status)
+        check.check00(status)
+        check.twotwo(status)
+
+    def home(status):
+        pass
 
 
 class bot():
@@ -225,6 +244,48 @@ class bot():
             z = threading.Timer(60, bot.t_forget)  # クールタイム伸ばした。
             z.start()
 
+    def BellBaku(fav):
+        s = time()
+        while 1:
+            e = time()
+            t = e - s
+            if t >= 5:
+                mastodon.status_favourite(fav)
+                break
+            else:
+                mastodon.status_favourite(fav)
+                mastodon.status_unfavourite(fav)
+
+    def fav_now(status):  # ニコります
+        fav = status["id"]
+
+        print("◇Fav")
+
+    def reb_now(status):  # ブーストします
+        reb = status["id"]
+        mastodon.status_reblog(reb)
+        print("◇Reb")
+
+    def rand_w(txt_deta):
+        f = codecs.open(txt_deta, 'r', 'utf-8')
+        l = []
+        for x in f:
+            l.append(x.rstrip("\r\n").replace('\\n', '\n'))
+        f.close()
+        m = len(l)
+        s = random.randint(1, m)
+        return l[s - 1]
+
+    def time_res():  # クールタイムが終わる処理。
+        count.toot_CT = False
+        print("◇tootの準備ができました")
+
+    def t_forget():  # 同じ内容を連投しないためのクールタイムです。
+        count.learn_toot = ""
+        print("◇前のトゥート内容を忘れました")
+
+
+class res():
     def res01(status):  # お返事関数シンプル版。
         content = Re1.text(status["content"])
         in_reply_to_id = None
@@ -385,18 +446,6 @@ class bot():
             else:
                 pass
 
-    def BellBaku(fav):
-        s = time()
-        while 1:
-            e = time()
-            t = e - s
-            if t >= 5:
-                mastodon.status_favourite(fav)
-                break
-            else:
-                mastodon.status_favourite(fav)
-                mastodon.status_unfavourite(fav)
-
     def EFB(status):
         content = Re1.text(status["content"])
         account = status["account"]
@@ -410,16 +459,8 @@ class bot():
                 t2 = threading.Timer(3, bot.BellBaku, [fav])
                 t2.start()
 
-    def fav_now(status):  # ニコります
-        fav = status["id"]
 
-        print("◇Fav")
-
-    def reb_now(status):  # ブーストします
-        reb = status["id"]
-        mastodon.status_reblog(reb)
-        print("◇Reb")
-
+class check():
     def check00(status):
         account = status["account"]
         ct = account["statuses_count"]
@@ -470,58 +511,26 @@ class bot():
             f.close()  # ファイルを閉じる
             print("◇寝る人を記憶しました")
 
+    def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
+        account = status["account"]
+        if account["acct"] != "1":  # 自分以外
+            if re.compile("こおり|(神[埼崎]|knzk|(100|5000兆)db)").search(status['content']):
+                v = threading.Timer(1, bot.fav_now, [status])
+                v.start()
+            else:
+                pass
+            if re.compile("こおり").search(status['content']):
+                b = threading.Timer(2, bot.reb_now, [status])
+                b.start()
+            else:
+                pass
+
     def twotwo(status):  # ネイティオが鳴いた数を監視しまーすｗｗｗｗｗ
         account = status["account"]
         if account["acct"] == "twotwo":
             if re.compile("トゥ|ﾄｩ").search(re.sub("<p>|</p>", "", status['content'])):
                 count.twotwo += 1
                 print("ネイティオが鳴いた数:" + str(count.twotwo))
-
-    def rand_w(txt_deta):
-        f = codecs.open(txt_deta, 'r', 'utf-8')
-        l = []
-        for x in f:
-            l.append(x.rstrip("\r\n").replace('\\n', '\n'))
-        f.close()
-        m = len(l)
-        s = random.randint(1, m)
-        return l[s - 1]
-
-    def time_res():  # クールタイムが終わる処理。
-        count.toot_CT = False
-        print("◇tootの準備ができました")
-
-    def t_local():  # listenerオブジェクトには監視させるものを（続く）
-        try:
-            listener = local_res_toot()
-            mastodon.local_stream(listener)
-        except:
-            print("例外情報\n" + traceback.format_exc())
-            with open('except.log', 'a') as f:
-                jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.write(str(jst_now))
-                traceback.print_exc(file=f)
-            sleep(180)
-            bot.t_local()
-            pass
-
-    def t_user():  # （続き）継承で組み込んだものを追加するようにします。
-        try:
-            listener = user_res_toot()
-            mastodon.user_stream(listener)
-        except:
-            print("例外情報\n" + traceback.format_exc())
-            with open('except.log', 'a') as f:
-                jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.write(str(jst_now))
-                traceback.print_exc(file=f)
-            sleep(180)
-            bot.t_user()
-            pass
-
-    def t_forget():  # 同じ内容を連投しないためのクールタイムです。
-        count.learn_toot = ""
-        print("◇前のトゥート内容を忘れました")
 
 
 class count():
@@ -678,12 +687,54 @@ class game():
                 ba.start()
 
 
+class Loading():
+    def go_local():  # listenerオブジェクトには監視させるものを（続く）
+        try:
+            listener = Local()
+            mastodon.local_stream(listener)
+        except:
+            print("例外情報\n" + traceback.format_exc())
+            with open('except.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.write(str(jst_now))
+                traceback.print_exc(file=f)
+            sleep(180)
+            bot.t_local()
+            pass
+
+    def go_user():  # （続き）継承で組み込んだものを追加するようにします。
+        try:
+            listener = User()
+            mastodon.user_stream(listener)
+        except:
+            print("例外情報\n" + traceback.format_exc())
+            with open('except.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.write(str(jst_now))
+                traceback.print_exc(file=f)
+            sleep(180)
+            bot.t_user()
+            pass
+
+    def re_local():
+        uuu = threading.Thread(target=Loading.go_local)
+        uuu.start()
+
+    def re_user():
+        lll = threading.Thread(target=Loading.go_user)
+        lll.start()
+
+
+def reload():
+    pass
+
+
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
     count()
-    uuu = threading.Timer(0, bot.t_local)
+    uuu = threading.Timer(0, Loading.go_local)
     uuu.start()
-    lll = threading.Timer(0, bot.t_user)
+    lll = threading.Timer(0, Loading.go_user)
     lll.start()
 
 """
