@@ -92,7 +92,8 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
             elif notification["type"] == "mention":  # 通知がリプだった場合です。
                 log = threading.Thread(Log(status).read())
                 log.run()
-                men.mention(status)
+                if account["acct"] != "1":
+                    men.mention(status)
 
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
                 print(account["display_name"])
@@ -117,6 +118,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
                 f.white(jst_now)
                 traceback.print_exc(file=f)
+            e_me()
             pass
         print("   ")
         pass
@@ -135,6 +137,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
+            e_me()
             pass
         print("   ")
         pass
@@ -148,6 +151,8 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 traceback.print_exc(file=f)
+            e_me()
+            pass
 
 
 """
@@ -165,6 +170,7 @@ class men():  # メンションに対する処理です。
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
         print(content.translate(non_bmp_map))
         print(mentions.translate(non_bmp_map))
+        media_files = None
         if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
             post = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(
                 count.twotwo) + "回鳴きました。"
@@ -182,12 +188,35 @@ class men():  # メンションに対する処理です。
         elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(content):
             post, sec = game.aram(status)
             g_vis = status["visibility"]
-        elif re.compile('みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(
-                content.translate(non_bmp_map)):
+        elif re.compile('みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(content):
             print("◇Hit")
             post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
             g_vis = status["visibility"]
             sec = 5
+        elif re.compile('たこ[焼や]き(.*)([焼や]いて|作って|つくって|['
+                        '食た]べたい|おねがい|お願い|ちょ[うー]だい|[欲ほ]しい)').search(content):
+            if account['acct'] != "1":
+                print("◇Hit")
+                sleep(5)
+                l = []
+                f = codecs.open('res\\takoyaki.txt', 'r', 'utf-8')
+                for x in f:
+                    l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
+                f.close()
+                m = len(l)
+                s = random.randint(1, m)
+                post = "@" + str(account["acct"]) + "\n" + l[s - 1]
+                f = codecs.open('res_med\\takoyaki.txt', 'r', 'utf-8')
+                j = []
+                for x in f:
+                    j.append(x.rstrip("\r\n").replace('\\n', '\n'))
+                f.close()
+                xxx = re.sub("(.*)\.", "", j[s - 1])
+                media_files = [mastodon.media_post("media\\" + j[s - 1], "image/" + xxx)]
+                print("◇メディア選択しました")
+                print(j[s - 1])
+                g_vis = "public"
+                sec = 5
         else:
             global api_Bot
             url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
@@ -203,23 +232,25 @@ class men():  # メンションに対する処理です。
             g_vis = status["visibility"]
             sec = 5
         in_reply_to_id = status["id"]
-        t = threading.Timer(sec, bot.toot, [post, g_vis, in_reply_to_id, None, None])
+        t = threading.Timer(sec, bot.toot, [post, g_vis, in_reply_to_id, media_files, None])
         t.start()
 
 
 class TL():  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
     def local(status):
+        account = status["account"]
         check.check01(status)
-        res.fav01(status)
-        res.res01(status)
-        res.res02(status)
-        res.res03(status)
-        res.res04(status)
-        res.res05(status)
-        res.res06(status)
-        game.omikuji(status)
-        game.land(status)
-        res.EFB(status)
+        if account["acct"] != "1":
+            res.fav01(status)
+            res.res01(status)
+            res.res02(status)
+            res.res03(status)
+            res.res04(status)
+            res.res05(status)
+            res.res06(status)
+            game.omikuji(status)
+            game.land(status)
+            res.EFB(status)
         check.check02(status)
         check.check03(status)
         check.check00(status)
@@ -753,6 +784,10 @@ def relogin():
         api_base_url=url_ins)  # インスタンス
     print("こおり「再ログインします。」")
 
+def e_me():
+    bot.toot("@0 エラーが出たようです。", "direct")
+    bot.toot("エラーが出ました……")
+
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
     count()
@@ -763,4 +798,6 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     lll.start()
     uuu.join()
     lll.join()
-    bot.toot("@0 読み込み、終了です。", "direct")
+    e_me()
+    sleep(3)
+    bot.toot("すみません、寝落ちするかもしれません。")
