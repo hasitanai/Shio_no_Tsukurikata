@@ -45,7 +45,6 @@ mastodon = Mastodon(
 
 print("こおり「ログイン、完了しました。」")
 
-
 class Re1():  # Content整頓用関数
     def text(text):
         return (re.sub('<p>|</p>|<a.+"tag">|<a.+"_blank">|<a.+mention">|<span>|</span>|</a>|<span class="[a-z-]+">', "",
@@ -80,10 +79,12 @@ class Log():  # toot記録用クラス٩(๑❛ᴗ❛๑)۶
 class User(StreamListener):  # ホームでフォローした人と通知を監視するStreamingAPIの継承クラスです。
     def on_notification(self, notification):  # 通知を監視します。
         try:
-            print(("===●user_on_notification{}●===").format(str(notification["type"])))
+            print(("===●user_on_notification【{}】●===").format(str(notification["type"])))
             status = notification["status"]
+            account = status["account"]
 
             if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
+                print(account["display_name"])
                 sleep(2)
                 mastodon.account_follow(account["id"])
                 print("◇フォローを返しました。")
@@ -94,6 +95,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                 men.mention(status)
 
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
+                print(account["display_name"])
                 if account["acct"] == "Knzk":
                     count.knzk_fav += 1
                     print("神崎にふぁぼられた数:" + str(count.knzk_fav))
@@ -105,9 +107,10 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                         f.close()
                         m = len(l)
                         s = random.randint(1, m)
-                        post_toot = (l[s - 1])
+                        post = (l[s - 1])
                         g_vis = "public"
-                        bot.toot_res(post_toot, g_vis)
+                        bot.toot_res(post, g_vis)
+                        count.knzk_fav = 0
         except Exception as e:
             print("エラー情報\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
@@ -147,6 +150,13 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
                 traceback.print_exc(file=f)
 
 
+"""
+「mastodon.」メソッドを下記の関数によって「ホーム」「連合」「ローカル」「指定のハッシュタグ」が選択できます
+ user_stream, public_stream, local_stream, hashtag_stream(self, tag, listener, async=False)
+StreamingAPIでトゥートを参照することによりAPIの節約ができます。是非活用していきましょう（*'∀'人）
+"""
+
+
 class men():  # メンションに対する処理です。
     def mention(status):
         account = status["account"]
@@ -156,26 +166,26 @@ class men():  # メンションに対する処理です。
         print(content.translate(non_bmp_map))
         print(mentions.translate(non_bmp_map))
         if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
-            post_toot = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(
+            post = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(
                 count.twotwo) + "回鳴きました。"
             g_vis = status["visibility"]
             sec = 5
         elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(content):
-            post_toot = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
+            post = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
             g_vis = status["visibility"]
             sec = 5
         elif re.compile("\d+[dD]\d+").search(content):
             coro = (re.sub("@1", "", str(content)))
-            post_toot = "@" + str(account["acct"]) + "\n" + game.dice(coro)
+            post = "@" + str(account["acct"]) + "\n" + game.dice(coro)
             g_vis = status["visibility"]
             sec = 5
         elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(content):
-            post_toot, sec = game.aram(status)
+            post, sec = game.aram(status)
             g_vis = status["visibility"]
         elif re.compile('みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(
                 content.translate(non_bmp_map)):
             print("◇Hit")
-            post_toot = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+            post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
             g_vis = status["visibility"]
             sec = 5
         else:
@@ -189,16 +199,16 @@ class men():  # メンションに対する処理です。
             }
             r = s.post(url, params=params)
             ans = json.loads(r.text)
-            post_toot = "@" + str(account["acct"]) + " " + ans["result"]
+            post = "@" + str(account["acct"]) + " " + ans["result"]
             g_vis = status["visibility"]
             sec = 5
         in_reply_to_id = status["id"]
-        t = threading.Timer(sec, bot.toot, [post_toot, g_vis, in_reply_to_id, None, None])
+        t = threading.Timer(sec, bot.toot, [post, g_vis, in_reply_to_id, None, None])
         t.start()
 
 
-class TL():
-    def local(status):  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
+class TL():  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
+    def local(status):
         check.check01(status)
         res.fav01(status)
         res.res01(status)
@@ -221,23 +231,27 @@ class TL():
 
 class bot():
     def __init__(self):
+        self.status = status
+        self.content = Re1.text(status["content"])
+        self.account = status["account"]
+        self.g_vis = "public"
         self.in_reply_to_id = None
         self.media_files = None
 
-    def toot(post_toot, g_vis="public", in_reply_to_id=None, media_files=None, spoiler_text=None):  # トゥートする関数処理だよ！
+    def toot(post, g_vis="public", in_reply_to_id=None, media_files=None, spoiler_text=None):  # トゥートする関数処理だよ！
         print(in_reply_to_id)
-        mastodon.status_post(status=post_toot, visibility=g_vis, in_reply_to_id=in_reply_to_id, media_ids=media_files,
+        mastodon.status_post(status=post, visibility=g_vis, in_reply_to_id=in_reply_to_id, media_ids=media_files,
                              spoiler_text=spoiler_text)
 
-    def toot_res(post_toot, g_vis, in_reply_to_id=None,
+    def toot_res(post, g_vis, in_reply_to_id=None,
                  media_files=None, spoiler_text=None):  # Postする内容が決まったらtoot関数に渡します。
         # その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
         g_vis = g_vis
         in_reply_to_id = in_reply_to_id
         media_files = media_files
-        if count.learn_toot != post_toot:
-            count.learn_toot = post_toot
-            bot.toot(post_toot, g_vis, in_reply_to_id, media_files, spoiler_text)
+        if count.learn_toot != post:
+            count.learn_toot = post
+            bot.toot(post, g_vis, in_reply_to_id, media_files, spoiler_text)
             t = threading.Timer(2, bot.time_res)
             t.start()
             count.toot_CT = True
@@ -301,8 +315,8 @@ class res():
                             sleep(int(row[0]))
                         else:
                             sleep(4)
-                        post_toot = row[1].replace('\\n', '\n')
-                        bot.toot_res(post_toot, "public", None, None, None)
+                        post = row[1].replace('\\n', '\n')
+                        bot.toot_res(post, "public", None, None, None)
 
     def res02(status):  # 該当するセリフからランダムtootが選ばれてトゥートします。
         content = Re1.text(status["content"])
@@ -319,8 +333,8 @@ class res():
                             sleep(int(row[0]))
                         else:
                             sleep(4)
-                        post_toot = bot.rand_w('res\\' + row[1] + '.txt')
-                        bot.toot_res(post_toot, "public", None, None, None)
+                        post = bot.rand_w('res\\' + row[1] + '.txt')
+                        bot.toot_res(post, "public", None, None, None)
                     return
 
     def res03(status):  # 該当する文字があるとメディアをアップロードしてトゥートしてくれます。
@@ -346,7 +360,7 @@ class res():
                         f.close()
                         m = len(l)
                         s = random.randint(1, m)
-                        post_toot = l[s - 1]
+                        post = l[s - 1]
                         f = codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8')
                         j = []
                         for x in f:
@@ -356,7 +370,7 @@ class res():
                         media_files = [mastodon.media_post("media\\" + j[s - 1], "image/" + xxx)]
                         print("◇メディア選択しました")
                         print(j[s - 1])
-                        bot.toot_res(post_toot, "public", None, media_files, None)
+                        bot.toot_res(post, "public", None, media_files, None)
                     return
 
     def res04(status):  # おはよう機能
@@ -368,9 +382,9 @@ class res():
                 f.close()  # ファイルを閉じる
                 if zzz == "good_night":
                     print("◇Hit")
-                    post_toot = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
+                    post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
                     g_vis = "public"
-                    t1 = threading.Timer(8, bot.toot[post_toot, "public", None, None, None])
+                    t1 = threading.Timer(8, bot.toot[post, "public", None, None, None])
                     t1.start()
                 elif zzz == "active":
                     f = codecs.open('at_time\\' + account["acct"] + '.txt', 'r', 'UTF-8')
@@ -390,16 +404,16 @@ class res():
                         else:
                             to_r = bot.rand_w('time\\oha.txt')
                         print("◇Hit")
-                        post_toot = account['display_name'] + "さん\n" + to_r
+                        post = account['display_name'] + "さん\n" + to_r
                         g_vis = "public"
-                        t1 = threading.Timer(3, bot.toot, [post_toot, "public", None, None, None])
+                        t1 = threading.Timer(3, bot.toot, [post, "public", None, None, None])
                         t1.start()
                 else:
                     """
                     print("◇Hit")
-                    post_toot = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
+                    post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
                     g_vis = "public"
-                    t1 = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                    t1 = threading.Timer(5, bot.toot, [post, "public", None, None, None])
                     t1.start()
                     """
                     pass
@@ -413,13 +427,13 @@ class res():
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
             if re.compile("寝マストドン|寝(ます|る)$|寝（ます|る）([。！、])|みんな(.*)おやすみ|おやすみ(.*)みんな").search(status['content']):
                 print("◇Hit")
-                post_toot = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
-                t1 = threading.Timer(3, toot, [post_toot, "public", None, None, None])
+                post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
+                t1 = threading.Timer(3, toot, [post, "public", None, None, None])
                 t1.start()
             elif re.compile("こおり(.*)おやすみ").search(status['content']):
                 print("◇Hit")
-                post_toot = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
-                t1 = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
+                t1 = threading.Timer(5, bot.toot, [post, "public", None, None, None])
                 t1.start()
 
     def res06(status):
@@ -427,9 +441,9 @@ class res():
         if re.compile("こおり(.*)[1-5][dD]\d+").search(content):
             print("○hitしました♪")
             account = status["account"]
-            post_toot = "@" + str(account["acct"]) + "\n" + game.dice(content)
+            post = "@" + str(account["acct"]) + "\n" + game.dice(content)
             g_vis = status["visibility"]
-            t = threading.Timer(5, bot.toot, [post_toot, g_vis, None, None, "サイコロ振りますね。"])
+            t = threading.Timer(5, bot.toot, [post, g_vis, None, None, "サイコロ振りますね。"])
             t.start()
 
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
@@ -452,9 +466,9 @@ class res():
         if account["acct"] != "1":
             if re.compile("エターナルフォースブリザード|えたーなるふぉーすぶりざーど").search(content):
                 fav = status["id"]
-                post_toot = "@" + account["acct"] + " エターナルフォースブリザード……！！"
+                post = "@" + account["acct"] + " エターナルフォースブリザード……！！"
                 in_reply_to_id = status["id"]
-                t1 = threading.Timer(3, bot.toot, [post_toot, "public", in_reply_to_id, None, None])
+                t1 = threading.Timer(3, bot.toot, [post, "public", in_reply_to_id, None, None])
                 t1.start()
                 t2 = threading.Timer(3, bot.BellBaku, [fav])
                 t2.start()
@@ -467,22 +481,22 @@ class check():
         if account["acct"] == "1":
             ct += 1
             if re.match('^\d+000$', str(ct)):
-                post_toot = str(ct) + 'toot、達成しました……！\n#こおりキリ番記念'
+                post = str(ct) + 'toot、達成しました……！\n#こおりキリ番記念'
                 g_vis = "public"
-                t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                t = threading.Timer(5, bot.toot, [post, "public", None, None, None])
                 t.start()
         else:
             if re.match('^\d+0000$', str(ct)):
-                post_toot = "@" + account['acct'] + "\n" + str(
+                post = "@" + account['acct'] + "\n" + str(
                     ct) + 'toot、おめでとうございます！'
                 g_vis = "public"
-                t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                t = threading.Timer(5, bot.toot, [post, "public", None, None, None])
                 t.start()
             elif re.match('^\d000$', str(ct)):
-                post_toot = "@" + account['acct'] + "\n" + str(
+                post = "@" + account['acct'] + "\n" + str(
                     ct) + 'toot、おめでとうございます。'
                 g_vis = "public"
-                t = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                t = threading.Timer(5, bot.toot, [post, "public", None, None, None])
                 t.start()
 
     def check01(status):  # アカウント情報の更新
@@ -641,8 +655,8 @@ class game():
                 if acc['acct'] != "1":
                     print("◇Hit")
                     sleep(5)
-                    post_toot = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
-                    bot.toot(post_toot, "public", None, None, None)
+                    post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
+                    bot.toot(post, "public", None, None, None)
                 return
 
     def aram(status):
@@ -656,9 +670,9 @@ class game():
         else:
             pass
         print(str(sec))
-        post_toot = "@" + account["acct"] + " " + "指定した時間が来たのでお知らせします。"
+        post = "@" + account["acct"] + " " + "指定した時間が来たのでお知らせします。"
         g_vis = status["visibility"]
-        return post_toot, sec
+        return post, sec
 
     def land(status):
         in_reply_to_id = None
@@ -668,8 +682,8 @@ class game():
             acc = status['account']
             if acc['acct'] != "1":
                 com = re.search("(.+)(開園)", content)
-                post_toot = re.sub('<span class="">', '', com.group(1)) + "閉園"
-                ba = threading.Timer(5, bot.toot, [post_toot, "public", None, None, None])
+                post = re.sub('<span class="">', '', com.group(1)) + "閉園"
+                ba = threading.Timer(5, bot.toot, [post, "public", None, None, None])
                 ba.start()
 
     def bals(status):
@@ -682,8 +696,8 @@ class game():
                 f = codecs.open('game\\bals.txt', 'w', 'utf-8')
                 f.write(str(count.bals))
                 f.close
-                post_toot = "[large=2x][color=red]目がぁぁぁ、目がぁぁぁ！x" + str(count.bals) + "[/color][/large]"
-                ba = threading.Timer(0, bot.toot, [post_toot, "public", None, None, None])
+                post = "[large=2x][color=red]目がぁぁぁ、目がぁぁぁ！x" + str(count.bals) + "[/color][/large]"
+                ba = threading.Timer(0, bot.toot, [post, "public", None, None, None])
                 ba.start()
 
 
@@ -699,7 +713,7 @@ class Loading():
                 f.write(str(jst_now))
                 traceback.print_exc(file=f)
             sleep(180)
-            bot.t_local()
+            bot.re_local()
             pass
 
     def go_user():  # （続き）継承で組み込んだものを追加するようにします。
@@ -713,37 +727,40 @@ class Loading():
                 f.write(str(jst_now))
                 traceback.print_exc(file=f)
             sleep(180)
-            bot.t_user()
+            bot.re_user()
             pass
 
     def re_local():
         uuu = threading.Thread(target=Loading.go_local)
         uuu.start()
+        uuu.join()
+        bot.toot("@0 ローカル、読み込み直しました", "direct")
 
     def re_user():
         lll = threading.Thread(target=Loading.go_user)
         lll.start()
+        lll.join()
+        bot.toot("@0 ホーム及び通知、読み込み直しました。", "direct")
 
 
 def reload():
     pass
 
+def relogin():
+    mastodon = Mastodon(
+        client_id="cred.txt",
+        access_token="auth.txt",
+        api_base_url=url_ins)  # インスタンス
+    print("こおり「再ログインします。」")
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
     count()
+    bot.toot("ログインしました。")
     uuu = threading.Timer(0, Loading.go_local)
     uuu.start()
     lll = threading.Timer(0, Loading.go_user)
     lll.start()
-
-"""
-「mastodon.」メソッドを下記の関数によって「ホーム」「連合」「ローカル」「指定のハッシュタグ」が選択できます
- user_stream, public_stream, local_stream, hashtag_stream(self, tag, listener, async=False)
-
-現在、絵文字コードの文字化けが解決してません……なので表示しないように処理をしています。
-StreamingAPIでトゥートを参照することによりAPIの節約ができます。是非活用していきましょう（*'∀'人）
-
-コードの整頓で見事、綺麗になりました。
-今後は機械学習を導入する予定です。
-"""
+    uuu.join()
+    lll.join()
+    bot.toot("@0 読み込み、終了です。", "direct")
