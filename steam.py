@@ -81,7 +81,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
         try:
             print(("===●user_on_notification【{}】●===").format(str(notification["type"])))
             status = notification["status"]
-            account = status["account"]
+            account = notification["account"]
 
             if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
                 print(account["display_name"])
@@ -113,11 +113,12 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                         bot.toot_res(post, g_vis)
                         count.knzk_fav = 0
         except Exception as e:
-            print("エラー情報\n" + traceback.format_exc())
+            print("エラー情報【USER】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white(jst_now)
+                f.white("【"+jst_now + "】\n")
                 traceback.print_exc(file=f)
+                f.white("\n")
             e_me()
             pass
         print("   ")
@@ -134,9 +135,12 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             ltl.run()
             pass
         except Exception as e:
-            print("エラー情報\n" + traceback.format_exc())
+            print("エラー情報【 LOCAL 】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.white("【"+jst_now + "】\n")
                 traceback.print_exc(file=f)
+                f.white("\n")
             e_me()
             pass
         print("   ")
@@ -148,9 +152,12 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             print(status_id)
             pass
         except Exception as e:
-            print("エラー情報\n" + traceback.format_exc())
+            print("エラー情報【DELETE】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
+                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                f.white("【"+jst_now + "】\n")
                 traceback.print_exc(file=f)
+                f.white("\n")
             e_me()
             pass
 
@@ -456,10 +463,11 @@ class res():
     def res05(status):  # おやすみ機能
         account = status["account"]
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
-            if re.compile("寝マストドン|寝(ます|る)$|寝（ます|る）([。！、])|みんな(.*)おやすみ|おやすみ(.*)みんな").search(status['content']):
+            if re.compile("寝マストドン|寝(ます|る)$|寝（ます|る）([。！、])|みんな(.*)おやすみ|おやすみ("
+                          ".*)みんな").search(status['content']):
                 print("◇Hit")
                 post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
-                t1 = threading.Timer(3, toot, [post, "public", None, None, None])
+                t1 = threading.Timer(3, bot.toot, [post, "public", None, None, None])
                 t1.start()
             elif re.compile("こおり(.*)おやすみ").search(status['content']):
                 print("◇Hit")
@@ -743,6 +751,7 @@ class Loading():
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
                 f.write(str(jst_now))
                 traceback.print_exc(file=f)
+                f.write("\n")
             sleep(180)
             bot.re_local()
             pass
@@ -757,6 +766,7 @@ class Loading():
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
                 f.write(str(jst_now))
                 traceback.print_exc(file=f)
+                f.write("\n")
             sleep(180)
             bot.re_user()
             pass
@@ -784,8 +794,12 @@ def relogin():
         api_base_url=url_ins)  # インスタンス
     print("こおり「再ログインします。」")
 
+def logout():
+    bot.toot("ログアウトします。")
+    sys.exit()
+
 def e_me():
-    bot.toot("@0 エラーが出たようです。", "direct")
+    bot.toot("@0 エラーが出たようです。\n" + traceback.format_exc(), "direct")
     bot.toot("エラーが出ました……")
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
