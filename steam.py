@@ -255,6 +255,7 @@ class TL():  # ここに受け取ったtootに対してどうするか追加し�
             res.res04(status)
             res.res05(status)
             res.res06(status)
+            res.y(status)
             game.omikuji(status)
             game.land(status)
             res.EFB(status)
@@ -484,6 +485,14 @@ class res():
             g_vis = status["visibility"]
             t = threading.Timer(5, bot.toot, [post, g_vis, None, None, "サイコロ振りますね。"])
             t.start()
+            
+    def y(status):
+        content = Re1.text(status["content"])
+        account = status["account"]
+        if re.compile("ねじりわさび").search(status['content']):  # 抜き出し
+            if account["acct"] != "1" or account["acct"] != "y":  # 自分とねじりわさびさんを感知しないようにう
+                post = "@y ねじりわさびさんの名前を感知しました。"
+                bot.toot(post, "direct", status["id"], None, None)
 
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
         account = status["account"]
