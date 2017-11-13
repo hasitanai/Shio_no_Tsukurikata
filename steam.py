@@ -489,10 +489,26 @@ class res():
     def y(status):
         content = Re1.text(status["content"])
         account = status["account"]
-        if re.compile("ねじりわさび").search(status['content']):  # 抜き出し
-            if account["acct"] != "1" or account["acct"] != "y":  # 自分とねじりわさびさんを感知しないようにう
-                post = "@y ねじりわさびさんの名前を感知しました。"
-                bot.toot(post, "direct", status["id"], None, None)
+        if count.y == True:
+            if re.compile("こおり.*ねじりサーチ.*[OoＯｏ][FfＦｆ][FfＦｆ]").search(status['content']):
+                if account["acct"] == "y" or account["acct"] == "0":
+                    count.y = False
+                    t = threading.Timer(5, bot.toot, ["ねじりサーチ、終了しました。"])
+                    t.start()
+                    return
+            elif re.compile("ねじりわさび|ねじり|わさび|ねじわさ|KnzkApp|神崎丼アプリ").search(status['content']):  # 抜き出し
+                if account["acct"] != "1" or account["acct"] != "y":  # 自分とねじりわさびさんを感知しないように
+                    yuzu = re.search("(ねじりわさび|ねじり|わさび|ねじわさ|KnzkApp|神崎丼アプリ)", content)
+                    post = ("@y {}を感知しました。").format(str(yuzu.group(1)))
+                    bot.toot(post, "direct", status["id"], None, None)
+                    return
+        else:
+            if account["acct"] == "y" or account["acct"] == "0":
+                if re.compile("こおり.*ねじりサーチ.*[OoＯｏ][NnＮｎ]").search(status['content']):
+                    count.y = True
+                    t = threading.Timer(5, bot.toot, ["ねじりサーチ、スタートです！"])
+                    t.start()
+                    return
 
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
         account = status["account"]
@@ -604,6 +620,7 @@ class count():
     bals = f.read()
     bals = int(bals)
     f.close
+    y = False
 
 
 class RSS():
@@ -698,7 +715,7 @@ class game():
         content = Re1.text(status["content"])
         in_reply_to_id = None
         if not count.toot_CT:
-            if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(content):
+            if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい)').search(content):
                 acc = status['account']
                 if acc['acct'] != "1":
                     print("◇Hit")
@@ -804,17 +821,14 @@ def relogin():
     print("こおり「再ログインします。」")
 
 def logout():
-    bot.toot("ログアウトします。")
+    bot.toot("ログアウトします。\nおやすみなさいです。")
     sys.exit()
 
 def e_me():
     bot.toot("@0 エラーが出たようです。\n" + traceback.format_exc(), "direct")
     bot.toot("エラーが出ました……")
 
-if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
-    api_Bot = open("api_Bot.txt").read()
-    count()
-    bot.toot("ログインしました。")
+def stream_init():
     uuu = threading.Timer(0, Loading.go_local)
     uuu.start()
     lll = threading.Timer(0, Loading.go_user)
@@ -823,4 +837,12 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     lll.join()
     e_me()
     sleep(3)
-    bot.toot("すみません、ログアウトします。\nおやすみなさいです。")
+    bot.toot("すみません、ログアウトするかもしれません。")
+
+if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
+    api_Bot = open("api_Bot.txt").read()
+    count()
+    bot.toot("ログインしました。")
+    stream_init = stream_init()
+    s = threading.Thread(target=stream_init)
+    s.run()
