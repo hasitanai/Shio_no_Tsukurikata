@@ -4,7 +4,7 @@ from mastodon import *
 from time import sleep
 from time import time
 import feedparser
-import re, sys, os, csv, json, codecs, io
+import re, sys, os, csv, json, codecs, io, gc
 import threading, requests, random
 from datetime import datetime
 from pytz import timezone
@@ -80,9 +80,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
     def on_notification(self, notification):  # 通知を監視します。
         try:
             print(("===●user_on_notification【{}】●===").format(str(notification["type"])))
-            status = notification["status"]
             account = notification["account"]
-
             if notification["type"] == "follow":  # 通知がフォローだった場合はフォロバします。
                 print(account["display_name"])
                 sleep(2)
@@ -90,12 +88,14 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                 print("◇フォローを返しました。")
 
             elif notification["type"] == "mention":  # 通知がリプだった場合です。
+                status = notification["status"]
                 log = threading.Thread(Log(status).read())
                 log.run()
                 if account["acct"] != "1":
                     men.mention(status)
 
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
+                status = notification["status"]
                 print(account["display_name"])
                 if account["acct"] == "Knzk":
                     count.knzk_fav += 1
@@ -263,8 +263,10 @@ class TL():  # ここに受け取ったtootに対してどうするか追加し�
         check.check03(status)
         check.check00(status)
         check.twotwo(status)
+        gc.collect()
 
     def home(status):
+        gc.collect()
         pass
 
 
@@ -497,7 +499,7 @@ class res():
                     t.start()
                     return
             elif re.compile("ねじりわさび|ねじり|わさび|ねじわさ|KnzkApp|神崎丼アプリ").search(status['content']):  # 抜き出し
-                if account["acct"] != "1" or account["acct"] != "y":  # 自分とねじりわさびさんを感知しないように
+                if account["acct"] is not "y" or account["acct"] is not "1":  # 自分とねじりわさびさんを感知しないように
                     yuzu = re.search("(ねじりわさび|ねじり|わさび|ねじわさ|KnzkApp|神崎丼アプリ)", content)
                     post = ("@y {}を感知しました。").format(str(yuzu.group(1)))
                     bot.toot(post, "direct", status["id"], None, None)
@@ -822,6 +824,7 @@ def relogin():
 
 def logout():
     bot.toot("ログアウトします。\nおやすみなさいです。")
+    sleep(1)
     sys.exit()
 
 def e_me():
@@ -829,20 +832,22 @@ def e_me():
     bot.toot("エラーが出ました……")
 
 def stream_init():
-    uuu = threading.Timer(0, Loading.go_local)
-    uuu.start()
-    lll = threading.Timer(0, Loading.go_user)
-    lll.start()
-    uuu.join()
-    lll.join()
-    e_me()
-    sleep(3)
-    bot.toot("すみません、ログアウトするかもしれません。")
+    try:
+        uuu = threading.Timer(0, Loading.go_local)
+        uuu.start()
+        lll = threading.Timer(0, Loading.go_user)
+        lll.start()
+    except:
+        e_me()
+        sleep(3)
+        bot.toot("すみません、ログアウトするかもしれません。")
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
     count()
-    bot.toot("ログインしました。")
+    k = input("start: ")
+    if k is "":
+        bot.toot("ログインしました。")
     stream_init = stream_init()
     s = threading.Thread(target=stream_init)
     s.run()
