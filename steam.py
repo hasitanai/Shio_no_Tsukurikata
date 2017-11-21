@@ -717,7 +717,7 @@ class game():
         content = Re1.text(status["content"])
         in_reply_to_id = None
         if not count.toot_CT:
-            if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい)').search(content):
+            if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい|(宜|よろ)しく)').search(content):
                 acc = status['account']
                 if acc['acct'] != "1":
                     print("◇Hit")
