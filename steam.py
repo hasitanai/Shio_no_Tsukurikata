@@ -181,9 +181,6 @@ class men():  # メンションに対する処理です。
         account = status["account"]
         mentions = Re1.text(status["mentions"])
         content = Re1.text(status["content"])
-        non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-        print(content.translate(non_bmp_map))
-        print(mentions.translate(non_bmp_map))
         media_files = None
         if account['acct'] != "1":
             if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
@@ -282,6 +279,7 @@ class TL():  # ここに受け取ったtootに対してどうするか追加し�
         check.check03(status)
         check.check00(status)
         check.twotwo(status)
+        check.media(status)
         gc.collect()
 
     def home(status):
@@ -633,12 +631,15 @@ class check():
                 
     def media(status):  # 画像監視機能つけてみました
         account = status["account"]
-        """
         if account["acct"] != "1" or account["acct"] != "0":  # 自分以外
-            if count.dev_mode = True
-                post = "@0 画像を検知しました"
+            if status['media_attachments'] == []:
+                pass
+            else:
+                med = status['media_attachments']
+                post = ("@0 メディアを検知しました\nid :"+status["id"]+"\nacct: "+account["acct"]+
+                        "\n"+status['url']+"\n"+med['url'])
                 bot.toot_res(post, "direct", status["id"], None, None)
-                pass"""
+                pass
 
 class count():
     knzk_fav = 0
@@ -878,4 +879,4 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
         bot.toot("ログインしました。")
     stream_init = stream_init()
     s = threading.Thread(target=stream_init)
-    s.run()
+    s.start()
