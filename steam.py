@@ -24,11 +24,13 @@ warningsは……分からん！！！！
 今後入れる予定のモジュ「Numpy」
 """
 
+# プロンプトで起動したい人のための装置
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
                               encoding=sys.stdout.encoding,
                               errors='backslashreplace',
                               line_buffering=sys.stdout.line_buffering)
 
+#これはよく分かってない
 warnings.simplefilter("ignore", UnicodeWarning)
 
 """
@@ -70,7 +72,6 @@ class Log():  # toot記録用クラス٩(๑❛ᴗ❛๑)۶
     def write(self):
         text = self.content
         acct = self.account["acct"]
-
         f = codecs.open('log\\' + 'log_' + nowing + '.txt', 'a', 'UTF-8')
         f.write(re.sub('<br />', '\\n', str(text)) + ',<acct="' + acct + '">\r\n')
         f.close()
@@ -129,8 +130,14 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
     def on_update(self, status):  # StreamingAPIがリアルタイムにトゥート情報を吐き出してくれます。
         try:
             print("===○local_on_update○===")
-            log = threading.Thread(Log(status).read())
-            log.run()
+            if count.dev_mode is True:
+                non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+                print(str(status).translate(non_bmp_map))
+            else:
+                log = threading.Thread(Log(status).read())
+                log.run()
+            if count.log_save is True:
+                Log(status).write()
             ltl = threading.Thread(TL.local(status))
             ltl.run()
             pass
@@ -178,31 +185,31 @@ class men():  # メンションに対する処理です。
         print(content.translate(non_bmp_map))
         print(mentions.translate(non_bmp_map))
         media_files = None
-        if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
-            post = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(
-                count.twotwo) + "回鳴きました。"
-            g_vis = status["visibility"]
-            sec = 5
-        elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(content):
-            post = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
-            g_vis = status["visibility"]
-            sec = 5
-        elif re.compile("\d+[dD]\d+").search(content):
-            coro = (re.sub("@1", "", str(content)))
-            post = "@" + str(account["acct"]) + "\n" + game.dice(coro)
-            g_vis = status["visibility"]
-            sec = 5
-        elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(content):
-            post, sec = game.aram(status)
-            g_vis = status["visibility"]
-        elif re.compile('みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(content):
-            print("◇Hit")
-            post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
-            g_vis = status["visibility"]
-            sec = 5
-        elif re.compile('たこ[焼や]き(.*)([焼や]いて|作って|つくって|['
-                        '食た]べたい|おねがい|お願い|ちょ[うー]だい|[欲ほ]しい)').search(content):
-            if account['acct'] != "1":
+        if account['acct'] != "1":
+            if re.compile("こおり(.*)(ネイティオ|ねいてぃお)(.*)鳴").search(content):
+                post = "@" + str(account["acct"]) + " " + "ネイティオさん、私が起きてから" + str(
+                    count.twotwo) + "回鳴きました。"
+                g_vis = status["visibility"]
+                sec = 5
+            elif re.compile("トゥートゥートゥー？|ﾄｩｰﾄｩｰﾄｩｰ?").search(content):
+                post = "@" + str(account["acct"]) + " " + "トゥートゥー、トゥートゥトゥトゥ「" + str(count.twotwo) + "」"
+                g_vis = status["visibility"]
+                sec = 5
+            elif re.compile("\d+[dD]\d+").search(content):
+                coro = (re.sub("@1", "", str(content)))
+                post = "@" + str(account["acct"]) + "\n" + game.dice(coro)
+                g_vis = status["visibility"]
+                sec = 5
+            elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(content):
+                post, sec = game.aram(status)
+                g_vis = status["visibility"]
+            elif re.compile('みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(content):
+                print("◇Hit")
+                post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                g_vis = status["visibility"]
+                sec = 5
+            elif re.compile('たこ[焼や]き(.*)([焼や]いて|作って|つくって|['
+                            '食た]べたい|おねがい|お願い|ちょ[うー]だい|[欲ほ]しい)').search(content):
                 print("◇Hit")
                 sleep(5)
                 l = []
@@ -224,23 +231,35 @@ class men():  # メンションに対する処理です。
                 print(j[s - 1])
                 g_vis = "public"
                 sec = 5
-        else:
-            global api_Bot
-            url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
-            s = requests.session()
-            mes = (re.sub("<p>|</p>", "", str(content)))
-            params = {
-                'key': api_Bot,  # 登録するとAPIKeyがもらえますのでここに入れます。
-                'message': mes,
-            }
-            r = s.post(url, params=params)
-            ans = json.loads(r.text)
-            post = "@" + str(account["acct"]) + " " + ans["result"]
-            g_vis = status["visibility"]
-            sec = 5
-        in_reply_to_id = status["id"]
-        t = threading.Timer(sec, bot.toot, [post, g_vis, in_reply_to_id, media_files, None])
-        t.start()
+            elif re.compile('デバック|[dD][eE][vV]|でばっく').search(content) and account['acct'] == "0":
+                if re.compile('ON|on|おん|オン').search(content):
+                    count.dev_mode = True
+                    post = "@" + str(account["acct"]) + " " + "デバックモード始めます。"
+                elif re.compile('OFF|off|おふ|オフ').search(content):
+                    count.dev_mode = False
+                    post = "@" + str(account["acct"]) + " " + "デバックモード終わります。"
+                g_vis = status["visibility"]
+                sec = 2
+            else:
+                global api_Bot
+                url = "https://chatbot-api.userlocal.jp/api/chat"  # 人工知能APIサービス登録してお借りしてます。
+                s = requests.session()
+                mes = (re.sub("<p>|</p>", "", str(content)))
+                params = {
+                    'key': api_Bot,  # 登録するとAPIKeyがもらえますのでここに入れます。
+                    'message': mes,
+                }
+                r = s.post(url, params=params)
+                ans = json.loads(r.text)
+                post = "@" + str(account["acct"]) + " " + ans["result"]
+                g_vis = status["visibility"]
+                sec = 5
+            if post is not None:
+                in_reply_to_id = status["id"]
+                t = threading.Timer(sec, bot.toot, [post, g_vis, in_reply_to_id, media_files, None])
+                t.start()
+            else:
+                pass
 
 
 class TL():  # ここに受け取ったtootに対してどうするか追加してね（*'∀'人）
@@ -611,7 +630,15 @@ class check():
             if re.compile("トゥ|ﾄｩ").search(re.sub("<p>|</p>", "", status['content'])):
                 count.twotwo += 1
                 print("ネイティオが鳴いた数:" + str(count.twotwo))
-
+                
+    def media(status):  # 画像監視機能つけてみました
+        account = status["account"]
+        """
+        if account["acct"] != "1" or account["acct"] != "0":  # 自分以外
+            if count.dev_mode = True
+                post = "@0 画像を検知しました"
+                bot.toot_res(post, "direct", status["id"], None, None)
+                pass"""
 
 class count():
     knzk_fav = 0
@@ -623,7 +650,8 @@ class count():
     bals = int(bals)
     f.close
     y = False
-
+    dev_mode = False
+    log_save = False
 
 class RSS():
     def rss(RSS_URL="https://github.com/GenkaiDev/mastodon/commits/knzk-master.atom"):
