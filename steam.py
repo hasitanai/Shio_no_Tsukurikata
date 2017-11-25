@@ -304,15 +304,26 @@ class bot():
     def toot_res(post, g_vis, in_reply_to_id=None,
                  media_files=None, spoiler_text=None):  # Postする内容が決まったらtoot関数に渡します。
         # その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
-        g_vis = g_vis
-        in_reply_to_id = in_reply_to_id
-        media_files = media_files
         if count.learn_toot != post:
+            sec = 2
             count.learn_toot = post
-            bot.toot(post, g_vis, in_reply_to_id, media_files, spoiler_text)
-            t = threading.Timer(2, bot.time_res)
+            now = time()
+            delay = now - count.CT
+            loss = count.end - int(delay)
+            if loss < 0:
+                loss = 0
+            ing = sec + loss
+            t = threading.Timer(ing, bot.toot, [toot_now, g_vis, rep, spo])
             t.start()
-            count.toot_CT = True
+            print("【次までのロスタイム:" + str(count.end+sec) + "】")
+            s = threading.Timer(ing, bot.res, [sec])
+            s.start()
+            del t
+            del s
+            gc.collect()
+            count.CT = time()
+            count.end = ing
+            bot.toot(post, g_vis, in_reply_to_id, media_files, spoiler_text)
             z = threading.Timer(60, bot.t_forget)  # クールタイム伸ばした。
             z.start()
 
@@ -330,7 +341,7 @@ class bot():
 
     def fav_now(status):  # ニコります
         fav = status["id"]
-
+        mastodon.status_favourite(fav)
         print("◇Fav")
 
     def reb_now(status):  # ブーストします
@@ -348,9 +359,10 @@ class bot():
         s = random.randint(1, m)
         return l[s - 1]
 
-    def time_res():  # クールタイムが終わる処理。
-        count.toot_CT = False
-        print("◇tootの準備ができました")
+    def res(sec):
+        count.end = count.end - sec
+        if count.end < 0:
+            count.end = 0
 
     def t_forget():  # 同じ内容を連投しないためのクールタイムです。
         count.learn_toot = ""
@@ -361,75 +373,72 @@ class res():
     def res01(status):  # お返事関数シンプル版。
         content = Re1.text(status["content"])
         in_reply_to_id = None
-        if not count.toot_CT:
-            f = codecs.open('reply.csv', 'r', "UTF-8", "ignore")
-            dataReader = csv.reader(f)
-            for row in dataReader:
-                if re.compile(row[2]).search(content):
-                    print("◇Hit")
-                    acc = status['account']
-                    if acc['acct'] != "1":
-                        if re.compile("[0-9]").search(row[0]):
-                            sleep(int(row[0]))
-                        else:
-                            sleep(4)
-                        post = row[1].replace('\\n', '\n')
-                        bot.toot_res(post, "public", None, None, None)
+        f = codecs.open('reply.csv', 'r', "UTF-8", "ignore")
+        dataReader = csv.reader(f)
+        for row in dataReader:
+            if re.compile(row[2]).search(content):
+                print("◇Hit")
+                acc = status['account']
+                if acc['acct'] != "1":
+                    if re.compile("[0-9]").search(row[0]):
+                        sleep(int(row[0]))
+                    else:
+                        sleep(4)
+                    post = row[1].replace('\\n', '\n')
+                    bot.toot_res(post, "public", None, None, None)
 
     def res02(status):  # 該当するセリフからランダムtootが選ばれてトゥートします。
         content = Re1.text(status["content"])
         in_reply_to_id = None
-        if not count.toot_CT:
-            f = codecs.open('reply_random.csv', 'r', "UTF-8", "ignore")
-            dataReader = csv.reader(f)
-            for row in dataReader:
-                if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
-                    acc = status['account']
-                    if acc['acct'] != "1":
-                        print("◇Hit")
-                        if re.compile("[0-9]").search(row[0]):
-                            sleep(int(row[0]))
-                        else:
-                            sleep(4)
-                        post = bot.rand_w('res\\' + row[1] + '.txt')
-                        bot.toot_res(post, "public", None, None, None)
-                    return
+        f = codecs.open('reply_random.csv', 'r', "UTF-8", "ignore")
+        dataReader = csv.reader(f)
+        for row in dataReader:
+            if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
+                acc = status['account']
+                if acc['acct'] != "1":
+                    print("◇Hit")
+                    if re.compile("[0-9]").search(row[0]):
+                        sleep(int(row[0]))
+                    else:
+                        sleep(4)
+                    post = bot.rand_w('res\\' + row[1] + '.txt')
+                    bot.toot_res(post, "public", None, None, None)
+                return
 
     def res03(status):  # 該当する文字があるとメディアをアップロードしてトゥートしてくれます。
         content = Re1.text(status["content"])
         in_reply_to_id = None
-        if not count.toot_CT:
-            f = codecs.open('reply_media.csv', 'r', "UTF-8", "ignore")
-            dataReader = csv.reader(f)
-            for row in dataReader:
-                if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
-                    acc = status['account']
-                    if acc['acct'] != "1":
-                        print("◇Hit")
-                        if re.compile("[0-9]").search(row[0]):
-                            sleep(int(row[0]))
-                        else:
-                            sleep(4)
-                            f = codecs.open(txt_deta, 'r', 'utf-8')
-                        l = []
-                        f = codecs.open('res\\' + row[1] + '.txt', 'r', 'utf-8')
-                        for x in f:
-                            l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
-                        f.close()
-                        m = len(l)
-                        s = random.randint(1, m)
-                        post = l[s - 1]
-                        f = codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8')
-                        j = []
-                        for x in f:
-                            j.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                        f.close()
-                        xxx = re.sub("(.*)\.", "", j[s - 1])
-                        media_files = [mastodon.media_post("media\\" + j[s - 1], "image/" + xxx)]
-                        print("◇メディア選択しました")
-                        print(j[s - 1])
-                        bot.toot_res(post, "public", None, media_files, None)
-                    return
+        f = codecs.open('reply_media.csv', 'r', "UTF-8", "ignore")
+        dataReader = csv.reader(f)
+        for row in dataReader:
+            if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
+                acc = status['account']
+                if acc['acct'] != "1":
+                    print("◇Hit")
+                    if re.compile("[0-9]").search(row[0]):
+                        sleep(int(row[0]))
+                    else:
+                        sleep(4)
+                        f = codecs.open(txt_deta, 'r', 'utf-8')
+                    l = []
+                    f = codecs.open('res\\' + row[1] + '.txt', 'r', 'utf-8')
+                    for x in f:
+                        l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
+                    f.close()
+                    m = len(l)
+                    s = random.randint(1, m)
+                    post = l[s - 1]
+                    f = codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8')
+                    j = []
+                    for x in f:
+                        j.append(x.rstrip("\r\n").replace('\\n', '\n'))
+                    f.close()
+                    xxx = re.sub("(.*)\.", "", j[s - 1])
+                    media_files = [mastodon.media_post("media\\" + j[s - 1], "image/" + xxx)]
+                    print("◇メディア選択しました")
+                    print(j[s - 1])
+                    bot.toot_res(post, "public", None, media_files, None)
+                return
 
     def res04(status):  # おはよう機能
         account = status["account"]
@@ -631,19 +640,25 @@ class check():
                 
     def media(status):  # 画像監視機能つけてみました
         account = status["account"]
-        if account["acct"] != "1" or account["acct"] != "0":  # 自分以外
+        if account["acct"] != "1":  # 自分以外
             if status['media_attachments'] == []:
                 pass
             else:
+                b = threading.Timer(2, bot.reb_now, [status])
+                b.start()
+                #通知レイプは合意じゃないので
+                """
                 med = status['media_attachments']
-                post = ("@0 メディアを検知しました\nid :"+status["id"]+"\nacct: "+account["acct"]+
-                        "\n"+status['url']+"\n"+med['url'])
-                bot.toot_res(post, "direct", status["id"], None, None)
+                post = ("@0 \nid :"+status["id"]+"\nacct: "+account["acct"]+
+                        "\n"+status['url'])
+                bot.toot_res(post, "direct", status["id"], None, "メディアを検知しました")
+                """
                 pass
 
 class count():
     knzk_fav = 0
-    toot_CT = False
+    CT = 0
+    end = 0
     learn_toot = ""
     twotwo = 0
     f = codecs.open('game\\bals.txt', 'r', 'utf-8')
@@ -745,15 +760,14 @@ class game():
     def omikuji(status):
         content = Re1.text(status["content"])
         in_reply_to_id = None
-        if not count.toot_CT:
-            if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい|(宜|よろ)しく)').search(content):
-                acc = status['account']
-                if acc['acct'] != "1":
-                    print("◇Hit")
-                    sleep(5)
-                    post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
-                    bot.toot(post, "public", None, None, None)
-                return
+        if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい|(宜|よろ)しく|ひとつ)').search(content):
+            acc = status['account']
+            if acc['acct'] != "1":
+                print("◇Hit")
+                sleep(5)
+                post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
+                bot.toot(post, "public", None, None, None)
+            return
 
     def aram(status):
         content = Re1.text(status["content"])
