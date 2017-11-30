@@ -313,7 +313,7 @@ class bot():
             if loss < 0:
                 loss = 0
             ing = sec + loss
-            t = threading.Timer(ing, bot.toot, [toot_now, g_vis, rep, spo])
+            t = threading.Timer(ing, bot.toot, [post, g_vis, in_reply_to_id, media_files, spoiler_text])
             t.start()
             print("【次までのロスタイム:" + str(count.end+sec) + "】")
             s = threading.Timer(ing, bot.res, [sec])
@@ -323,7 +323,6 @@ class bot():
             gc.collect()
             count.CT = time()
             count.end = ing
-            bot.toot(post, g_vis, in_reply_to_id, media_files, spoiler_text)
             z = threading.Timer(60, bot.t_forget)  # クールタイム伸ばした。
             z.start()
 
@@ -440,7 +439,7 @@ class res():
                     bot.toot_res(post, "public", None, media_files, None)
                 return
 
-    def res04(status):  # おはよう機能
+    def res04(status):  # おはよう機能（機能してない）
         account = status["account"]
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
             try:
@@ -489,7 +488,7 @@ class res():
                 f.write("active")
                 f.close()
 
-    def res05(status):  # おやすみ機能
+    def res05(status):  # おやすみ機能（機能してない）
         account = status["account"]
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
             if re.compile("寝マストドン|寝(ます|る)$|寝（ます|る）([。！、])|みんな(.*)おやすみ|おやすみ("
@@ -894,3 +893,5 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     stream_init = stream_init()
     s = threading.Thread(target=stream_init)
     s.start()
+    s.join()
+    bot.toot("すみません、少しログアウトします。")
