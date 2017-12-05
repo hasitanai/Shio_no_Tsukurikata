@@ -14,7 +14,6 @@ import numpy as np
 
 """
 上記必要なものはpipしていってね！！！
-多分Mastodon.pyとrequestsくらいかな？
 reは正規表現検索用　sysとjsonは多分何かの基盤
 threadingはマルチ稼働のため　csvはトゥート保管のデータ形式のため。
 codecsは文字化け処理用。　randomは文字通りランダムにするためのもの。
@@ -155,8 +154,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
         try:
-            print("===×on_delete×===")
-            print(status_id)
+            printstr(("===×on_delete【{}】×===").format(str(status_id)))
             pass
         except Exception as e:
             print("エラー情報【DELETE】\n" + traceback.format_exc())
@@ -894,4 +892,4 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     s = threading.Thread(target=stream_init)
     s.start()
     s.join()
-    bot.toot("すみません、少しログアウトします。")
+    print('ぽん')
