@@ -29,7 +29,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
                               errors='backslashreplace',
                               line_buffering=sys.stdout.line_buffering)
 
-#これはよく分かってない
+# これはよく分かってない
 warnings.simplefilter("ignore", UnicodeWarning)
 
 """
@@ -45,6 +45,7 @@ mastodon = Mastodon(
     api_base_url=url_ins)  # インスタンス
 
 print("こおり「ログイン、完了しました。」")
+
 
 class Re1():  # Content整頓用関数
     def text(text):
@@ -116,7 +117,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
             print("エラー情報【USER】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white("【"+jst_now + "】\n")
+                f.white("【" + jst_now + "】\n")
                 traceback.print_exc(file=f)
                 f.white("\n")
             e_me()
@@ -144,7 +145,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             print("エラー情報【 LOCAL 】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white("【"+jst_now + "】\n")
+                f.white("【" + jst_now + "】\n")
                 traceback.print_exc(file=f)
                 f.white("\n")
             e_me()
@@ -160,7 +161,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             print("エラー情報【DELETE】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white("【"+jst_now + "】\n")
+                f.white("【" + jst_now + "】\n")
                 traceback.print_exc(file=f)
                 f.white("\n")
             e_me()
@@ -299,11 +300,10 @@ class bot():
         mastodon.status_post(status=post, visibility=g_vis, in_reply_to_id=in_reply_to_id, media_ids=media_files,
                              spoiler_text=spoiler_text)
 
-    def toot_res(post, g_vis, in_reply_to_id=None,
-                 media_files=None, spoiler_text=None):  # Postする内容が決まったらtoot関数に渡します。
+    def toot_res(post, g_vis="public", in_reply_to_id=None,
+                 media_files=None, spoiler_text=None, sec=2):  # Postする内容が決まったらtoot関数に渡します。
         # その後は直ぐに連投しないようにクールタイムを挟む処理をしてます。
         if count.learn_toot != post:
-            sec = 2
             count.learn_toot = post
             now = time()
             delay = now - count.CT
@@ -313,7 +313,7 @@ class bot():
             ing = sec + loss
             t = threading.Timer(ing, bot.toot, [post, g_vis, in_reply_to_id, media_files, spoiler_text])
             t.start()
-            print("【次までのロスタイム:" + str(count.end+sec) + "】")
+            print("【次までのロスタイム:" + str(count.end + sec) + "】")
             s = threading.Timer(ing, bot.res, [sec])
             s.start()
             del t
@@ -375,66 +375,45 @@ class res():
         for row in dataReader:
             if re.compile(row[2]).search(content):
                 print("◇Hit")
-                acc = status['account']
-                if acc['acct'] != "1":
-                    if re.compile("[0-9]").search(row[0]):
-                        sleep(int(row[0]))
-                    else:
-                        sleep(4)
-                    post = row[1].replace('\\n', '\n')
-                    bot.toot_res(post, "public", None, None, None)
+                post = row[1].replace('\\n', '\n')
+                bot.toot_res(post, "public", )
 
     def res02(status):  # 該当するセリフからランダムtootが選ばれてトゥートします。
         content = Re1.text(status["content"])
-        in_reply_to_id = None
         f = codecs.open('reply_random.csv', 'r', "UTF-8", "ignore")
         dataReader = csv.reader(f)
         for row in dataReader:
             if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
-                acc = status['account']
-                if acc['acct'] != "1":
-                    print("◇Hit")
-                    if re.compile("[0-9]").search(row[0]):
-                        sleep(int(row[0]))
-                    else:
-                        sleep(4)
-                    post = bot.rand_w('res\\' + row[1] + '.txt')
-                    bot.toot_res(post, "public", None, None, None)
+                print("◇Hit")
+                post = bot.rand_w('res\\' + row[1] + '.txt')
+                bot.toot_res(post, "public", sec=int(row[0]))
                 return
 
     def res03(status):  # 該当する文字があるとメディアをアップロードしてトゥートしてくれます。
         content = Re1.text(status["content"])
-        in_reply_to_id = None
         f = codecs.open('reply_media.csv', 'r', "UTF-8", "ignore")
         dataReader = csv.reader(f)
         for row in dataReader:
             if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
-                acc = status['account']
-                if acc['acct'] != "1":
-                    print("◇Hit")
-                    if re.compile("[0-9]").search(row[0]):
-                        sleep(int(row[0]))
-                    else:
-                        sleep(4)
-                        f = codecs.open(txt_deta, 'r', 'utf-8')
-                    l = []
-                    f = codecs.open('res\\' + row[1] + '.txt', 'r', 'utf-8')
-                    for x in f:
-                        l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
-                    f.close()
-                    m = len(l)
-                    s = random.randint(1, m)
-                    post = l[s - 1]
-                    f = codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8')
-                    j = []
-                    for x in f:
-                        j.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                    f.close()
-                    xxx = re.sub("(.*)\.", "", j[s - 1])
-                    media_files = [mastodon.media_post("media\\" + j[s - 1], "image/" + xxx)]
-                    print("◇メディア選択しました")
-                    print(j[s - 1])
-                    bot.toot_res(post, "public", None, media_files, None)
+                print("◇Hit")
+                l = []
+                f = codecs.open('res\\' + row[1] + '.txt', 'r', 'utf-8')
+                for x in f:
+                    l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
+                f.close()
+                m = len(l)
+                s = random.randint(1, m)
+                post = l[s - 1]
+                f = codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8')
+                j = []
+                for x in f:
+                    j.append(x.rstrip("\r\n").replace('\\n', '\n'))
+                f.close()
+                xxx = re.sub("(.*)\.", "", j[s - 1])
+                media_files = [mastodon.media_post("media\\" + j[s - 1])]
+                print("◇メディア選択しました")
+                print(j[s - 1])
+                bot.toot_res(post, "public", None, media_files, None, int(row[0]))
                 return
 
     def res04(status):  # おはよう機能（機能してない）
@@ -507,10 +486,8 @@ class res():
             print("○hitしました♪")
             account = status["account"]
             post = "@" + str(account["acct"]) + "\n" + game.dice(content)
-            g_vis = status["visibility"]
-            t = threading.Timer(5, bot.toot, [post, g_vis, None, None, "サイコロ振りますね。"])
-            t.start()
-            
+            bot.toot_res(post, status["visibility"], None, None, "サイコロ振りますね。", 3)
+
     def y(status):
         content = Re1.text(status["content"])
         account = status["account"]
@@ -521,9 +498,9 @@ class res():
                     t = threading.Timer(5, bot.toot, ["ねじりサーチ、終了しました。"])
                     t.start()
                     return
-            elif re.compile("ねじりわさび|ねじり|わさび|ねじわさ|KnzkApp|神崎丼アプリ").search(status['content']):  # 抜き出し
+            elif re.compile("ねじりわさび|ねじり|わさび|ねじわさ|[Kk]nzk[Aa]pp|神崎丼アプリ").search(status['content']):  # 抜き出し
                 if account["acct"] is not "y" or account["acct"] is not "1":  # 自分とねじりわさびさんを感知しないように
-                    yuzu = re.search("(ねじりわさび|ねじり|わさび|ねじわさ|KnzkApp|神崎丼アプリ)", content)
+                    yuzu = re.search("(ねじりわさび|ねじり|わさび|ねじわさ|[Kk]nzk[Aa]pp|神崎丼アプリ)", content)
                     post = ("@y {}を感知しました。").format(str(yuzu.group(1)))
                     bot.toot(post, "direct", status["id"], None, None)
                     return
@@ -634,7 +611,7 @@ class check():
             if re.compile("トゥ|ﾄｩ").search(re.sub("<p>|</p>", "", status['content'])):
                 count.twotwo += 1
                 print("ネイティオが鳴いた数:" + str(count.twotwo))
-                
+
     def media(status):  # 画像監視機能つけてみました
         account = status["account"]
         if account["acct"] != "1":  # 自分以外
@@ -643,7 +620,7 @@ class check():
             else:
                 b = threading.Timer(2, bot.reb_now, [status])
                 b.start()
-                #通知レイプは合意じゃないので
+                # 通知レイプは合意じゃないので
                 """
                 med = status['media_attachments']
                 post = ("@0 \nid :"+status["id"]+"\nacct: "+account["acct"]+
@@ -651,6 +628,7 @@ class check():
                 bot.toot_res(post, "direct", status["id"], None, "メディアを検知しました")
                 """
                 pass
+
 
 class count():
     knzk_fav = 0
@@ -665,6 +643,7 @@ class count():
     y = False
     dev_mode = False
     log_save = False
+
 
 class RSS():
     def rss(RSS_URL="https://github.com/GenkaiDev/mastodon/commits/knzk-master.atom"):
@@ -807,8 +786,20 @@ class game():
                 ba = threading.Timer(0, bot.toot, [post, "public", None, None, None])
                 ba.start()
 
+    def MenHealer(staus):
+        pass
+
 
 class Loading():
+    def deco(func):
+        import functools
+        @functools.wraps(func)
+        def wrapper(*args,**kwargs):
+            func(*args,**kwargs)
+            print(("Streaming開始です【{}】").format(func))
+        return wrapper
+
+    @deco
     def go_local():  # listenerオブジェクトには監視させるものを（続く）
         try:
             listener = Local()
@@ -824,6 +815,7 @@ class Loading():
             bot.re_local()
             pass
 
+    @deco
     def go_user():  # （続き）継承で組み込んだものを追加するようにします。
         try:
             listener = User()
@@ -855,6 +847,7 @@ class Loading():
 def reload():
     pass
 
+
 def relogin():
     mastodon = Mastodon(
         client_id="cred.txt",
@@ -862,14 +855,17 @@ def relogin():
         api_base_url=url_ins)  # インスタンス
     print("こおり「再ログインします。」")
 
+
 def logout():
     bot.toot("ログアウトします。\nおやすみなさいです。")
     sleep(1)
     sys.exit()
 
+
 def e_me():
     bot.toot("@0 エラーが出たようです。\n" + traceback.format_exc(), "direct")
     bot.toot("エラーが出ました……")
+
 
 def stream_init():
     try:
@@ -881,6 +877,7 @@ def stream_init():
         e_me()
         sleep(3)
         bot.toot("すみません、ログアウトするかもしれません。")
+
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     api_Bot = open("api_Bot.txt").read()
