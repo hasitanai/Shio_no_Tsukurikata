@@ -155,7 +155,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
         try:
-            printstr(("===×on_delete【{}】×===").format(str(status_id)))
+            print(str("===×on_delete【{}】×===").format(str(status_id)))
             pass
         except Exception as e:
             print("エラー情報【DELETE】\n" + traceback.format_exc())
@@ -786,7 +786,7 @@ class game():
                 ba = threading.Timer(0, bot.toot, [post, "public", None, None, None])
                 ba.start()
 
-    def MenHealer(staus):
+    def mental_healther(staus):
         pass
 
 
