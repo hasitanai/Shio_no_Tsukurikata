@@ -46,6 +46,12 @@ mastodon = Mastodon(
 
 print("こおり「ログイン、完了しました。」")
 
+def back01():
+        print("---timeline遡りチェックテスト---")
+        tl = mastodon.timeline_local()
+        for status in tl:
+            res.fav01(status)
+            sleep(1)
 
 class Re1():  # Content整頓用関数
     def text(text):
@@ -888,5 +894,7 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     stream_init = stream_init()
     s = threading.Thread(target=stream_init)
     s.start()
+    if k is "":
+        back01()
     s.join()
     print('ぽん')
