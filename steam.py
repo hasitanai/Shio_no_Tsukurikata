@@ -50,8 +50,10 @@ def back01():
         print("---timeline遡りチェックテスト---")
         tl = mastodon.timeline_local()
         for status in tl:
-            res.fav01(status)
-            sleep(1)
+                print("---API_LOCAL【遡り】---")
+                Log(status).read()
+                res.fav01(status)
+                sleep(1)
 
 class Re1():  # Content整頓用関数
     def text(text):
@@ -818,7 +820,7 @@ class Loading():
                 traceback.print_exc(file=f)
                 f.write("\n")
             sleep(180)
-            bot.re_local()
+            Loading.re_local()
             pass
 
     @deco
@@ -834,7 +836,7 @@ class Loading():
                 traceback.print_exc(file=f)
                 f.write("\n")
             sleep(180)
-            bot.re_user()
+            Loading.re_user()
             pass
 
     def re_local():
@@ -876,8 +878,8 @@ def e_me():
 def stream_init():
     try:
         uuu = threading.Timer(0, Loading.go_local)
-        uuu.start()
         lll = threading.Timer(0, Loading.go_user)
+        uuu.start()
         lll.start()
     except:
         e_me()
@@ -897,4 +899,4 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     if k is "":
         back01()
     s.join()
-    print('ぽん')
+    print('読み込み完了しました。')
