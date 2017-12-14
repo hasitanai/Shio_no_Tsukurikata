@@ -803,8 +803,8 @@ class Loading():
         import functools
         @functools.wraps(func)
         def wrapper(*args,**kwargs):
-            func(*args,**kwargs)
-            print(("Streaming開始です【{}】").format(func))
+            f = func(*args,**kwargs)
+            res ("Streaming開始です【{}】").format(f)
         return wrapper
 
     @deco
