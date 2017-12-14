@@ -461,7 +461,12 @@ class res():
                     tstr = re.sub("\....Z", "", nstr)
                     now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     delta = now_time - last_time
-                    if delta.total_seconds() >= 72000:
+                    if delta.total_seconds() >= 604800:
+                        to_r = bot.rand_w('time\\hallo.txt')
+                        print("◇Hit")
+                        post = account['display_name'] + "さん\n" + to_r
+                        bot.toot_res(post, "public", sec=5)
+                    elif delta.total_seconds() >= 72000:
                         if now_time.hour in range(3, 9):
                             to_r = bot.rand_w('time\\kon.txt')
                         elif now_time.hour in range(9, 20):
@@ -470,13 +475,12 @@ class res():
                             to_r = bot.rand_w('time\\oha.txt')
                         print("◇Hit")
                         post = account['display_name'] + "さん\n" + to_r
-                        g_vis = "public"
                         bot.toot_res(post, "public", sec=5)
                     elif delta.total_seconds() >= 10800:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
                         post = account['display_name'] + "さん\n" + to_r
-                        g_vis = "public"
+                        bot.toot_res(post, "public", sec=5)
         except:
             print("◇失敗しました。")
             f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
@@ -586,8 +590,8 @@ class check():
         account = status["account"]
         content = re.sub("<p>|</p>", "", str(status['content']))
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
-            if re.compile("[寝ね](ます|る|マス)([！よかぞね。]?)$|[寝ね](ます|る|マス)"
-                          "(.*)[ぽお]や[すし]").search(content):
+            if re.compile("[寝ね](ます|る|マス)([よかぞね]?|[…。うぅー～！]+)$|"
+                          "[寝ね](ます|る|マス)(.*)[ぽお]や[すし]").search(content):
                 print("◇Hit")
                 post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
                 bot.toot_res(post, "public", sec=5)
