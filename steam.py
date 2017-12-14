@@ -426,7 +426,7 @@ class res():
                 bot.toot_res(post, "public", None, media_files, None, int(row[0]))
                 return
 
-    def res04(status):  # おはよう機能（機能してない）
+    def res04(status):  # こおりちゃん式挨拶機能の実装
         account = status["account"]
         content = re.sub("<p>|</p>", "", str(status['content']))
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
@@ -452,7 +452,7 @@ class res():
                     tstr = re.sub("\....Z", "", nstr)
                     now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     delta = now_time - last_time
-                    if delta >= 70000:
+                    if delta >= 72000:
                         if now_time.hour in range(3, 9):
                             to_r = bot.rand_w('time\\kon.txt')
                         elif now_time.hour in range(9, 20):
@@ -463,6 +463,11 @@ class res():
                         post = account['display_name'] + "さん\n" + to_r
                         g_vis = "public"
                         bot.toot_res(post, "public", sec=5)
+                    elif delta >= 10800:
+                        to_r = bot.rand_w('time\\hallo.txt')
+                        print("◇Hit")
+                        post = account['display_name'] + "さん\n" + to_r
+                        g_vis = "public"
                 else:
                     """
                     print("◇Hit")
@@ -493,22 +498,18 @@ class res():
             if re.compile("こおり.*ねじりサーチ.*[OoＯｏ][FfＦｆ][FfＦｆ]").search(status['content']):
                 if account["acct"] == "y" or account["acct"] == "0":
                     count.y = False
-                    t = threading.Timer(5, bot.toot, ["ねじりサーチ、終了しました。"])
-                    t.start()
-                    return
+                    return bot.toot_res("ねじりサーチ、終了しました。", sec=3)
             elif re.compile("ねじりわさび|ねじり|わさび|ねじわさ|[Kk]nzk[Aa]pp|神崎丼アプリ").search(status['content']):  # 抜き出し
                 if account["acct"] is not "y" or account["acct"] is not "1":  # 自分とねじりわさびさんを感知しないように
                     yuzu = re.search("(ねじりわさび|ねじり|わさび|ねじわさ|[Kk]nzk[Aa]pp|神崎丼アプリ)", content)
                     post = ("@y {}を感知しました。").format(str(yuzu.group(1)))
-                    bot.toot(post, "direct", status["id"], None, None)
-                    return
+                    return bot.toot(post, "direct", status["id"], None, None)
+
         else:
             if account["acct"] == "y" or account["acct"] == "0":
                 if re.compile("こおり.*ねじりサーチ.*[OoＯｏ][NnＮｎ]").search(status['content']):
                     count.y = True
-                    t = threading.Timer(5, bot.toot, ["ねじりサーチ、スタートです！"])
-                    t.start()
-                    return
+                    return bot.toot_res("ねじりサーチ、スタートです！", sec=3)
 
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
         account = status["account"]
