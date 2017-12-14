@@ -469,19 +469,15 @@ class res():
                         post = account['display_name'] + "さん\n" + to_r
                         g_vis = "public"
                 else:
-                    """
-                    print("◇Hit")
-                    post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
-                    g_vis = "public"
-                    bot.toot_res(post, "public", sec=5)
-                    """
                     pass
             except:
-                print("◇失敗しました。")
+                print("◇初めての人に会いました。")
+                post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
+                g_vis = "public"
+                bot.toot_res(post, "public", sec=5)
                 f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
                 f.write("active")
                 f.close()
-                e_me()
 
     def res05(status):
         content = Re1.text(status["content"])
