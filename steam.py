@@ -46,14 +46,16 @@ mastodon = Mastodon(
 
 print("こおり「ログイン、完了しました。」")
 
+
 def back01():
-        print("---timeline遡りチェックテスト---")
-        tl = mastodon.timeline_local()
-        for status in tl:
-                print("---API_LOCAL【遡り】---")
-                Log(status).read()
-                res.fav01(status)
-                sleep(1)
+    print("---timeline遡りチェックテスト---")
+    tl = mastodon.timeline_local()
+    for status in tl:
+        print("---API_LOCAL【遡り】---")
+        Log(status).read()
+        res.fav01(status)
+        sleep(1)
+
 
 class Re1():  # Content整頓用関数
     def text(text):
@@ -277,12 +279,12 @@ class TL():  # ここに受け取ったtootに対してどうするか追加し�
             res.res03(status)
             res.res04(status)
             res.res05(status)
-            res.res06(status)
             res.y(status)
             game.omikuji(status)
             game.land(status)
             res.EFB(status)
         check.check02(status)
+
         check.check03(status)
         check.check00(status)
         check.twotwo(status)
@@ -426,6 +428,7 @@ class res():
 
     def res04(status):  # おはよう機能（機能してない）
         account = status["account"]
+        content = re.sub("<p>|</p>", "", str(status['content']))
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
             try:
                 f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'r', 'UTF-8')
@@ -435,8 +438,10 @@ class res():
                     print("◇Hit")
                     post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
                     g_vis = "public"
-                    t1 = threading.Timer(8, bot.toot[post, "public", None, None, None])
-                    t1.start()
+                    bot.toot_res(post, "public", sec=5)
+                    f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
+                    f.write("active")
+                    f.close()
                 elif zzz == "active":
                     f = codecs.open('at_time\\' + account["acct"] + '.txt', 'r', 'UTF-8')
                     nstr = f.read()
@@ -447,7 +452,7 @@ class res():
                     tstr = re.sub("\....Z", "", nstr)
                     now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     delta = now_time - last_time
-                    if delta >= 10800:
+                    if delta >= 70000:
                         if now_time.hour in range(3, 9):
                             to_r = bot.rand_w('time\\kon.txt')
                         elif now_time.hour in range(9, 20):
@@ -457,38 +462,23 @@ class res():
                         print("◇Hit")
                         post = account['display_name'] + "さん\n" + to_r
                         g_vis = "public"
-                        t1 = threading.Timer(3, bot.toot, [post, "public", None, None, None])
-                        t1.start()
+                        bot.toot_res(post, "public", sec=5)
                 else:
                     """
                     print("◇Hit")
                     post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
                     g_vis = "public"
-                    t1 = threading.Timer(5, bot.toot, [post, "public", None, None, None])
-                    t1.start()
+                    bot.toot_res(post, "public", sec=5)
                     """
                     pass
             except:
+                print("◇失敗しました。")
                 f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
                 f.write("active")
                 f.close()
+                e_me()
 
-    def res05(status):  # おやすみ機能（機能してない）
-        account = status["account"]
-        if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
-            if re.compile("寝マストドン|寝(ます|る)$|寝（ます|る）([。！、])|みんな(.*)おやすみ|おやすみ("
-                          ".*)みんな").search(status['content']):
-                print("◇Hit")
-                post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
-                t1 = threading.Timer(3, bot.toot, [post, "public", None, None, None])
-                t1.start()
-            elif re.compile("こおり(.*)おやすみ").search(status['content']):
-                print("◇Hit")
-                post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
-                t1 = threading.Timer(5, bot.toot, [post, "public", None, None, None])
-                t1.start()
-
-    def res06(status):
+    def res05(status):
         content = Re1.text(status["content"])
         if re.compile("こおり(.*)[1-5][dD]\d+").search(content):
             print("○hitしました♪")
@@ -557,21 +547,18 @@ class check():
             if re.match('^\d+000$', str(ct)):
                 post = str(ct) + 'toot、達成しました……！\n#こおりキリ番記念'
                 g_vis = "public"
-                t = threading.Timer(5, bot.toot, [post, "public", None, None, None])
-                t.start()
+                bot.toot_res(post, "public", sec=5)
         else:
             if re.match('^\d+0000$', str(ct)):
                 post = "@" + account['acct'] + "\n" + str(
                     ct) + 'toot、おめでとうございます！'
                 g_vis = "public"
-                t = threading.Timer(5, bot.toot, [post, "public", None, None, None])
-                t.start()
+                bot.toot_res(post, "public", sec=5)
             elif re.match('^\d000$', str(ct)):
                 post = "@" + account['acct'] + "\n" + str(
                     ct) + 'toot、おめでとうございます。'
                 g_vis = "public"
-                t = threading.Timer(5, bot.toot, [post, "public", None, None, None])
-                t.start()
+                bot.toot_res(post, "public", sec=5)
 
     def check01(status):  # アカウント情報の更新
         account = status["account"]
@@ -591,13 +578,23 @@ class check():
         f.write("active")  #
         f.close()  # ファイルを閉じる
 
-    def check03(status):  # お休みした人を記憶する
+    def check03(status):  # お休みする人を記憶
         account = status["account"]
-        if re.compile("寝マストドン|寝(ます|る)$|寝（ます|る）([。！、])|みんな(.*)おやすみ|おやすみ(.*)みんな").search(status['content']):
-            f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-            f.write("good_night")  #
-            f.close()  # ファイルを閉じる
-            print("◇寝る人を記憶しました")
+        content = re.sub("<p>|</p>", "", str(status['content']))
+        if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
+            if re.compile("[寝ね](ます|る|マス)([！よかぞね。]?)$|[寝ね](ます|る|マス)"
+                          "(.*)[ぽお]や[すし]").search(content):
+                print("◇Hit")
+                post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
+                bot.toot_res(post, "public", sec=5)
+                f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
+                f.write("good_night")
+                f.close()
+                print("◇寝る人を記憶しました")
+            elif re.compile("こおり(.*)[ぽお]や[すし]").search(status['content']):
+                print("◇Hit")
+                post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
+                bot.toot_res(post, "public", sec=5) 
 
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
         account = status["account"]
@@ -802,9 +799,10 @@ class Loading():
     def deco(func):
         import functools
         @functools.wraps(func)
-        def wrapper(*args,**kwargs):
-            f = func(*args,**kwargs)
-            res ("Streaming開始です【{}】").format(f)
+        def wrapper(*args, **kwargs):
+            f = func(*args, **kwargs)
+            res("Streaming開始です【{}】").format(f)
+
         return wrapper
 
     @deco
