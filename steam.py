@@ -429,11 +429,20 @@ class res():
     def res04(status):  # こおりちゃん式挨拶機能の実装
         account = status["account"]
         content = re.sub("<p>|</p>", "", str(status['content']))
-        if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
-            try:
-                f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'r', 'UTF-8')
-                zzz = f.read()
-                f.close()  # ファイルを閉じる
+        try:
+            if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
+                try:
+                    f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'r', 'UTF-8')
+                    zzz = f.read()
+                    f.close()  # ファイルを閉じる
+                except:
+                    print("◇初めての人に会いました。")
+                    post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
+                    g_vis = "public"
+                    bot.toot_res(post, "public", sec=5)
+                    f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
+                    f.write("active")
+                    f.close()
                 if zzz == "good_night":
                     print("◇Hit")
                     post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
@@ -452,7 +461,7 @@ class res():
                     tstr = re.sub("\....Z", "", nstr)
                     now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     delta = now_time - last_time
-                    if delta >= 72000:
+                    if delta.total_seconds() >= 72000:
                         if now_time.hour in range(3, 9):
                             to_r = bot.rand_w('time\\kon.txt')
                         elif now_time.hour in range(9, 20):
@@ -463,21 +472,19 @@ class res():
                         post = account['display_name'] + "さん\n" + to_r
                         g_vis = "public"
                         bot.toot_res(post, "public", sec=5)
-                    elif delta >= 10800:
+                    elif delta.total_seconds() >= 10800:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
                         post = account['display_name'] + "さん\n" + to_r
                         g_vis = "public"
-                else:
-                    pass
-            except:
-                print("◇初めての人に会いました。")
-                post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
-                g_vis = "public"
-                bot.toot_res(post, "public", sec=5)
-                f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-                f.write("active")
-                f.close()
+        except:
+            print("◇失敗しました。")
+            f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
+            f.write("active")
+            f.close()
+            e_me()
+
+
 
     def res05(status):
         content = Re1.text(status["content"])
