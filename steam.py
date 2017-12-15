@@ -443,7 +443,7 @@ class res():
                     f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
                     f.write("active")
                     f.close()
-                    zzz == ""
+                    zzz = ""
                 if zzz == "good_night":
                     print("◇Hit")
                     post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
