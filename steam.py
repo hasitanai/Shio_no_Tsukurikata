@@ -437,7 +437,10 @@ class res():
                     f.close()  # ファイルを閉じる
                 except:
                     print("◇初めての人に会いました。")
-                    post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
+                    if account['display_name'] == "":
+                        post = account['acct']+ "さん\n" + "はじめまして、よろしくお願いいたします。"
+                    else:
+                        post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
                     g_vis = "public"
                     bot.toot_res(post, "public", sec=5)
                     f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
@@ -477,7 +480,7 @@ class res():
                         print("◇Hit")
                         post = account['display_name'] + "さん\n" + to_r
                         bot.toot_res(post, "public", sec=5)
-                    elif delta.total_seconds() >= 10800:
+                    elif delta.total_seconds() >= 14400:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
                         post = account['display_name'] + "さん\n" + to_r
@@ -750,7 +753,7 @@ class game():
     def omikuji(status):
         content = Re1.text(status["content"])
         in_reply_to_id = None
-        if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい|(宜|よろ)しく|ひとつ)').search(content):
+        if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい|(宜|よろ)しく|ひとつ|し(て|たい))').search(content):
             acc = status['account']
             if acc['acct'] != "1":
                 print("◇Hit")
