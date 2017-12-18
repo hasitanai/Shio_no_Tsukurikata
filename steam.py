@@ -468,8 +468,11 @@ class res():
                     if delta.total_seconds() >= 604800:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
-                        post = account['display_name'] + "さん\n" + to_r
-                        bot.toot_res(post, "public", sec=5)
+                        if account['display_name'] == "":
+                            post = account['acct']+ "さん\n" + to_r
+                        else:
+                            post = account['display_name'] + "さん\n" + to_r
+                        return bot.toot_res(post, "public", sec=5)
                     elif delta.total_seconds() >= 72000:
                         if now_time.hour in range(3, 9):
                             to_r = bot.rand_w('time\\kon.txt')
@@ -478,13 +481,19 @@ class res():
                         else:
                             to_r = bot.rand_w('time\\oha.txt')
                         print("◇Hit")
-                        post = account['display_name'] + "さん\n" + to_r
-                        bot.toot_res(post, "public", sec=5)
+                        if account['display_name'] == "":
+                            post = account['acct']+ "さん\n" + to_r
+                        else:
+                            post = account['display_name'] + "さん\n" + to_r
+                        return bot.toot_res(post, "public", sec=5)
                     elif delta.total_seconds() >= 14400:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
-                        post = account['display_name'] + "さん\n" + to_r
-                        bot.toot_res(post, "public", sec=5)
+                        if account['display_name'] == "":
+                            post = account['acct']+ "さん\n" + to_r
+                        else:
+                            post = account['display_name'] + "さん\n" + to_r
+                        return bot.toot_res(post, "public", sec=5)
         except:
             print("◇失敗しました。")
             f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
@@ -903,6 +912,8 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
     k = input("start: ")
     if k is "":
         bot.toot("ログインしました。")
+    elif k is "2":
+        bot.toot("再起動しました。")
     stream_init = stream_init()
     s = threading.Thread(target=stream_init)
     s.start()
