@@ -379,52 +379,46 @@ class bot():
 class res():
     def res01(status):  # お返事関数シンプル版。
         content = Re1.text(status["content"])
-        in_reply_to_id = None
-        f = codecs.open('reply.csv', 'r', "UTF-8", "ignore")
-        dataReader = csv.reader(f)
-        for row in dataReader:
-            if re.compile(row[2]).search(content):
-                print("◇Hit")
-                post = row[1].replace('\\n', '\n')
-                bot.toot_res(post, "public", )
+        with codecs.open('reply.csv', 'r', "UTF-8", "ignore") as f:
+            for row in csv.reader(f):
+                if re.compile(row[2]).search(content):
+                    print("◇Hit")
+                    post = row[1].replace('\\n', '\n')
+                    bot.toot_res(post, "public", )
 
     def res02(status):  # 該当するセリフからランダムtootが選ばれてトゥートします。
         content = Re1.text(status["content"])
-        f = codecs.open('reply_random.csv', 'r', "UTF-8", "ignore")
-        dataReader = csv.reader(f)
-        for row in dataReader:
-            if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
-                print("◇Hit")
-                post = bot.rand_w('res\\' + row[1] + '.txt')
-                bot.toot_res(post, "public", sec=int(row[0]))
-                return
+        with codecs.open('reply_random.csv', 'r', "UTF-8", "ignore") as f:
+            for row in csv.reader(f):
+                if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
+                    print("◇Hit")
+                    post = bot.rand_w('res\\' + row[1] + '.txt')
+                    bot.toot_res(post, "public", sec=int(row[0]))
+                    return
 
     def res03(status):  # 該当する文字があるとメディアをアップロードしてトゥートしてくれます。
         content = Re1.text(status["content"])
-        f = codecs.open('reply_media.csv', 'r', "UTF-8", "ignore")
-        dataReader = csv.reader(f)
-        for row in dataReader:
-            if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
-                print("◇Hit")
-                l = []
-                f = codecs.open('res\\' + row[1] + '.txt', 'r', 'utf-8')
-                for x in f:
-                    l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
-                f.close()
-                m = len(l)
-                s = random.randint(1, m)
-                post = l[s - 1]
-                f = codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8')
-                j = []
-                for x in f:
-                    j.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                f.close()
-                xxx = re.sub("(.*)\.", "", j[s - 1])
-                media_files = [mastodon.media_post("media\\" + j[s - 1])]
-                print("◇メディア選択しました")
-                print(j[s - 1])
-                bot.toot_res(post, "public", None, media_files, None, int(row[0]))
-                return
+        with codecs.open('reply_media.csv', 'r', "UTF-8", "ignore") as f:
+            for row in csv.reader(f):
+                if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
+                    print("◇Hit")
+                    l = []
+                    with codecs.open('res\\' + row[1] + '.txt', 'r', 'utf-8') as f:
+                        for x in f:
+                            l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
+                    m = len(l)
+                    s = random.randint(1, m)
+                    post = l[s - 1]
+                    with codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8') as f:
+                        j = []
+                        for x in f:
+                            j.append(x.rstrip("\r\n").replace('\\n', '\n'))
+                    xxx = re.sub("(.*)\.", "", j[s - 1])
+                    media_files = [mastodon.media_post("media\\" + j[s - 1])]
+                    print("◇メディア選択しました")
+                    print(j[s - 1])
+                    bot.toot_res(post, "public", None, media_files, None, int(row[0]))
+                    return
 
     def res04(status):  # こおりちゃん式挨拶機能の実装
         account = status["account"]
@@ -432,9 +426,8 @@ class res():
         try:
             if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
                 try:
-                    f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'r', 'UTF-8')
-                    zzz = f.read()
-                    f.close()  # ファイルを閉じる
+                    with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
+                        zzz = f.read()
                 except:
                     print("◇初めての人に会いました。")
                     if account['display_name'] == "":
