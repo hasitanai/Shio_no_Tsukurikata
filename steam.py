@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from mastodon import *
-from time import sleep
-from time import time
+from time import time, sleep
 import feedparser
 import re, sys, os, csv, json, codecs, io, gc
 import threading, requests, random
@@ -107,7 +106,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
 
             elif notification["type"] == "favourite":  # 通知がニコられたときです。
                 status = notification["status"]
-                print(account["display_name"])
+                print("{0}@{1}さんがベルを鳴らしました。".format(account["display_name"], account["acct"]))
                 if account["acct"] == "Knzk":
                     count.knzk_fav += 1
                     print("神崎にふぁぼられた数:" + str(count.knzk_fav))
@@ -123,6 +122,10 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                         g_vis = "public"
                         bot.toot_res(post, g_vis)
                         count.knzk_fav = 0
+
+            elif notification["type"] == "reblog":  # 通知がニコられたときです。
+                print("{0}@{1}さんがブーストしました。".format(account["display_name"], account["acct"]))
+                
         except Exception as e:
             print("エラー情報【USER】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
@@ -284,7 +287,6 @@ class TL():  # ここに受け取ったtootに対してどうするか追加し�
             game.land(status)
             res.EFB(status)
         check.check02(status)
-
         check.check03(status)
         check.check00(status)
         check.twotwo(status)
@@ -441,17 +443,35 @@ class res():
                     f.close()
                     zzz = ""
                 if zzz == "good_night":
-                    print("◇Hit")
-                    post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
-                    g_vis = "public"
-                    bot.toot_res(post, "public", sec=5)
-                    f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-                    f.write("active")
-                    f.close()
+                    with codecs.open('dic_time\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
+                        nstr = f.read()["sleep"]
+                    tstr = re.sub("\....Z", "", nstr)
+                    last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                    nstr = status['created_at']
+                    tstr = re.sub("\....Z", "", nstr)
+                    now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                    delta = now_time - last_time
+                    if delta.total_seconds() < 600:
+                        pass
+                    elif delta.total_seconds() >= 600:
+                        print("◇Hit")
+                        post = account['display_name'] + "さん\n" + bot.rand_w('time\\mada.txt')
+                        g_vis = "public"
+                        bot.toot_res(post, "public", sec=5)
+                        with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                            f.write("active")
+                        return
+                    elif delta.total_seconds() >= 3600:
+                        print("◇Hit")
+                        post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
+                        g_vis = "public"
+                        bot.toot_res(post, "public", sec=5)
+                        with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                            f.write("active")
+                        return
                 elif zzz == "active":
-                    f = codecs.open('at_time\\' + account["acct"] + '.txt', 'r', 'UTF-8')
-                    nstr = f.read()
-                    f.close
+                    with codecs.open('at_time\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
+                        nstr = f.read()
                     tstr = re.sub("\....Z", "", nstr)
                     last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     nstr = status['created_at']
@@ -479,7 +499,7 @@ class res():
                         else:
                             post = account['display_name'] + "さん\n" + to_r
                         return bot.toot_res(post, "public", sec=5)
-                    elif delta.total_seconds() >= 14400:
+                    elif delta.total_seconds() >= 21600:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
                         if account['display_name'] == "":
@@ -578,19 +598,14 @@ class check():
         account = status["account"]
         created_at = status['created_at']
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-        f = codecs.open('acct\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-        f.write(str(status["account"]).translate(non_bmp_map))
-        f.close()
+        with codecs.open('acct\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+            f.write(str(status["account"]).translate(non_bmp_map))
 
     def check02(status):  # 最後にトゥートした時間の記憶
         account = status["account"]
         created_at = status['created_at']
-        f = codecs.open('at_time\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-        f.write(str(status["created_at"]))  # \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z
-        f.close()  # ファイルを閉じる
-        f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-        f.write("active")  #
-        f.close()  # ファイルを閉じる
+        with codecs.open('at_time\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+            f.write(str(status["created_at"]))  # \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z
 
     def check03(status):  # お休みする人を記憶
         account = status["account"]
@@ -599,16 +614,27 @@ class check():
             if re.compile("[寝ね](ます|る|マス)([よかぞね]?|[…。うぅー～！]+)$|"
                           "[寝ね](ます|る|マス)(.*)[ぽお]や[すし]").search(content):
                 print("◇Hit")
-                post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
+                if account['display_name'] == "":
+                    post = account['acct']+ "さん\n" + bot.rand_w('time\\oya.txt')
+                else:
+                    post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
                 bot.toot_res(post, "public", sec=5)
-                f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-                f.write("good_night")
-                f.close()
+                with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                    f.write("good_night")
+                with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                    zzz = json.load(f)
+                    zzz.update({"sleep":str(status["created_at"])})
+                    f.write(str(zzz))
                 print("◇寝る人を記憶しました")
+            """
             elif re.compile("こおり(.*)[ぽお]や[すし]").search(status['content']):
                 print("◇Hit")
-                post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
-                bot.toot_res(post, "public", sec=5) 
+                if account['display_name'] == "":
+                    post = account['acct']+ "さん\n" + bot.rand_w('time\\oya.txt')
+                else:
+                    post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
+                bot.toot_res(post, "public", sec=5)
+            """
 
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
         account = status["account"]
@@ -753,16 +779,52 @@ class game():
         return result
 
     def omikuji(status):
+        account=status["account"]
         content = Re1.text(status["content"])
         in_reply_to_id = None
         if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい|(宜|よろ)しく|ひとつ|し(て|たい))').search(content):
             acc = status['account']
             if acc['acct'] != "1":
-                print("◇Hit")
-                sleep(5)
-                post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
-                bot.toot(post, "public", None, None, None)
-            return
+                try:
+                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                        nstr = json.load(f)
+                    last_time = datetime.strptime(re.sub("T..:..:..\....Z", "", nstr["omikuji_time"]), '%Y-%m-%d')
+                    now_time = datetime.strptime(re.sub("T..:..:..\....Z", "", status['created_at']), '%Y-%m-%d')
+                    if last_time != now_time:
+                        print("◇Hit")
+                        post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
+                        bot.toot_res(post, "public", sec=6)
+                        c = {}
+                        c.update({"omikuji_time":str(status["created_at"])})
+                        z = re.search("【(.+)】", post)
+                        c.update({"omikuji_lack":z.group(1)})
+                        with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                            json.dump(c, f)
+                        with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                            a = {}
+                            d = nstr["omikuji_time"]
+                            f = datetime.date(d.year, d.month, d.day)
+                            a.update({d: z.group(1)})
+                            json.dump(a, f)
+                    else:
+                        bot.toot_res("@" + acc['acct'] + " 一日一回ですよ！\n朝9時頃を越えたらもう一度お願いします！", "public", status["id"], sec=3)
+                except:
+                    print("◇hit 作成")
+                    post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
+                    bot.toot_res(post, "public", sec=6)
+                    c = {}
+                    c.update({"omikuji_time":str(status["created_at"])})
+                    z = re.search("【(.+)】", post)
+                    c.update({"omikuji_lack":z.group(1)})
+                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                        json.dump(c, f)
+                    with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                        a = {}
+                        d = status["created_at"]
+                        f = datetime.date(d.year, d.month, d.day)
+                        a.update({d: z.group(1)})
+                        json.dump(a, f)
+        return
 
     def aram(status):
         content = Re1.text(status["content"])
