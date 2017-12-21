@@ -5,7 +5,7 @@ from time import time, sleep
 import feedparser
 import re, sys, os, csv, json, codecs, io, gc
 import threading, requests, random
-from datetime import datetime
+from datetime import datetime, date
 from pytz import timezone
 import warnings, traceback
 from xml.sax.saxutils import unescape as unesc
@@ -104,7 +104,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                 if account["acct"] != "1":
                     men.mention(status)
 
-            elif notification["type"] == "favourite":  # 通知がニコられたときです。
+            elif notification["type"] == "favourite":  # 通知がベルのときです。
                 status = notification["status"]
                 print("{0}@{1}さんがベルを鳴らしました。".format(account["display_name"], account["acct"]))
                 if account["acct"] == "Knzk":
@@ -123,7 +123,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                         bot.toot_res(post, g_vis)
                         count.knzk_fav = 0
 
-            elif notification["type"] == "reblog":  # 通知がニコられたときです。
+            elif notification["type"] == "reblog":  # 通知がブーストのときです。
                 print("{0}@{1}さんがブーストしました。".format(account["display_name"], account["acct"]))
                 
         except Exception as e:
@@ -158,7 +158,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             print("エラー情報【 LOCAL 】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white("【" + jst_now + "】\n")
+                f.white("【{}】\n".format(str(jst_now)))
                 traceback.print_exc(file=f)
                 f.white("\n")
             e_me()
@@ -443,8 +443,8 @@ class res():
                     f.close()
                     zzz = ""
                 if zzz == "good_night":
-                    with codecs.open('dic_time\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
-                        nstr = f.read()["sleep"]
+                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                        nstr = json.load()["sleep"]
                     tstr = re.sub("\....Z", "", nstr)
                     last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     nstr = status['created_at']
@@ -791,7 +791,7 @@ class game():
                     last_time = datetime.strptime(re.sub("T..:..:..\....Z", "", nstr["omikuji_time"]), '%Y-%m-%d')
                     now_time = datetime.strptime(re.sub("T..:..:..\....Z", "", status['created_at']), '%Y-%m-%d')
                     if last_time != now_time:
-                        print("◇Hit")
+                        print("◇Hit_try")
                         post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
                         bot.toot_res(post, "public", sec=6)
                         c = {}
@@ -802,14 +802,12 @@ class game():
                             json.dump(c, f)
                         with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
                             a = {}
-                            d = nstr["omikuji_time"]
-                            f = datetime.date(d.year, d.month, d.day)
-                            a.update({d: z.group(1)})
+                            a.update({re.sub("T..:..:..\....Z", "", status['created_at']): z.group(1)})
                             json.dump(a, f)
                     else:
                         bot.toot_res("@" + acc['acct'] + " 一日一回ですよ！\n朝9時頃を越えたらもう一度お願いします！", "public", status["id"], sec=3)
                 except:
-                    print("◇hit 作成")
+                    print("◇hit_except")
                     post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
                     bot.toot_res(post, "public", sec=6)
                     c = {}
@@ -820,9 +818,7 @@ class game():
                         json.dump(c, f)
                     with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
                         a = {}
-                        d = status["created_at"]
-                        f = datetime.date(d.year, d.month, d.day)
-                        a.update({d: z.group(1)})
+                        a.update({re.sub("T..:..:..\....Z", "", status['created_at']): z.group(1)})
                         json.dump(a, f)
         return
 
@@ -887,7 +883,7 @@ class Loading():
             listener = Local()
             mastodon.local_stream(listener)
         except:
-            print("例外情報\n" + traceback.format_exc())
+            print("【例外情報】\n" + traceback.format_exc())
             with open('except.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
                 f.write(str(jst_now))
@@ -903,7 +899,7 @@ class Loading():
             listener = User()
             mastodon.user_stream(listener)
         except:
-            print("例外情報\n" + traceback.format_exc())
+            print("【例外情報】\n" + traceback.format_exc())
             with open('except.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
                 f.write(str(jst_now))
@@ -947,6 +943,14 @@ def logout():
 def e_me():
     bot.toot("@0 エラーが出たようです。\n" + traceback.format_exc(), "direct")
     bot.toot("エラーが出ました……")
+
+def e_stream(tl):
+        print("エラー情報【{}】\n".format(tl))
+        with open('error.log', 'a') as f:
+            jst_now = datetime.now(timezone('Asia/Tokyo'))
+            f.white("【{}】\n".format(str(jst_now)))
+            traceback.print_exc(file=f)
+            f.white("\n")
 
 
 def stream_init():
