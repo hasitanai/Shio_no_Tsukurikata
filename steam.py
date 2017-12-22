@@ -212,11 +212,80 @@ class men():  # メンションに対する処理です。
             elif re.compile("(アラーム|[Aa][Rr][Aa][Mm])(\d+)").search(content):
                 post, sec = game.aram(status)
                 g_vis = status["visibility"]
-            elif re.compile('みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ][きく]|や[りる])').search(content):
-                print("◇Hit")
-                post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
-                g_vis = status["visibility"]
-                sec = 5
+            elif re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい|(宜|よろ)しく|ひとつ|し(て|たい))').search(content):
+                if account['acct'] != "1":
+                    def order(x):
+                        if x == "【大吉】":
+                            return 6
+                        elif x == "【中吉】":
+                            return 5
+                        elif x == "【小吉】":
+                            return 4
+                        elif x == "【吉】":
+                            return 3
+                        elif x == "【半吉】":
+                            return 2
+                        elif x == "【末吉】":
+                            return 1
+                        elif x == "【末小吉】":
+                            return 0
+                        elif x == "【凶】":
+                            return -1
+                        elif x == "【小凶】":
+                            return -2
+                        elif x == "【半凶】":
+                            return -3
+                        elif x == "【末凶】":
+                            return -4
+                        elif x == "【大凶】":
+                            return -5
+                    try:
+                        with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                            nstr = json.load(f)
+                        last_time = datetime.strptime(re.sub("T..:..:..\....Z", "", nstr["omikuji_time"]), '%Y-%m-%d')
+                        now_time = datetime.strptime(re.sub("T..:..:..\....Z", "", status['created_at']), '%Y-%m-%d')
+                        if last_time != now_time:
+                            print("◇Hit_try")
+                            post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                            c = {}
+                            c.update({"omikuji_time":str(status["created_at"])})
+                            w = nstr["omikuji_lack"]
+                            n1 = order(w)
+                            z = re.search("【(.+)】", post)
+                            c.update({"omikuji_lack":z.group(1)})
+                            n2 = order(z.group(1))
+                            if n1 < n2:
+                                post = post + "\n前回より運気が上がりましたね。"
+                            elif  n1 > n2:
+                                post = post + "\n前回より運気が下がりましたね。"
+                            elif n2 == 6:
+                                post = post + "\nおめでとうございます。"
+                            elif n2 == -5:
+                                post = post + "\n……ご愁傷様です。元気だしてくださいね。"
+                            with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                                json.dump(c, f)
+                            with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                                a = {}
+                                a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
+                                json.dump(a, f)
+                        else:
+                            s = "\n本日あなたが引いた結果は【{}】です。".format(nstr["omikuji_lack"])
+                            post = "@" + acc['acct'] + " 一日一回ですよ！\n朝9時頃を越えたらもう一度お願いします！" + s
+                    except:
+                        print("◇hit_except")
+                        post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                        c = {}
+                        c.update({"omikuji_time":str(status["created_at"])})
+                        z = re.search("【(.+)】", post)
+                        c.update({"omikuji_lack":z.group(1)})
+                        with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                            json.dump(c, f)
+                        with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                            a = {}
+                            a.update({re.sub("T..:..:..\....Z", "", status['created_at']): z.group(1)})
+                            json.dump(a, f)
+                    g_vis = status["visibility"]
+                    sec = 5
             elif re.compile('たこ[焼や]き(.*)([焼や]いて|作って|つくって|['
                             '食た]べたい|おねがい|お願い|ちょ[うー]だい|[欲ほ]しい)').search(content):
                 print("◇Hit")
@@ -443,32 +512,40 @@ class res():
                     f.close()
                     zzz = ""
                 if zzz == "good_night":
-                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
-                        nstr = json.load()["sleep"]
-                    tstr = re.sub("\....Z", "", nstr)
-                    last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
-                    nstr = status['created_at']
-                    tstr = re.sub("\....Z", "", nstr)
-                    now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
-                    delta = now_time - last_time
-                    if delta.total_seconds() < 600:
-                        pass
-                    elif delta.total_seconds() >= 600:
-                        print("◇Hit")
-                        post = account['display_name'] + "さん\n" + bot.rand_w('time\\mada.txt')
-                        g_vis = "public"
-                        bot.toot_res(post, "public", sec=5)
-                        with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
-                            f.write("active")
-                        return
-                    elif delta.total_seconds() >= 3600:
-                        print("◇Hit")
+                    try:
+                        with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                            nstr = json.load()["sleep"]
+                        tstr = re.sub("\....Z", "", nstr)
+                        last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                        nstr = status['created_at']
+                        tstr = re.sub("\....Z", "", nstr)
+                        now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                        delta = now_time - last_time
+                        if delta.total_seconds() < 600:
+                            pass
+                        elif delta.total_seconds() >= 600:
+                            print("◇Hit")
+                            post = account['display_name'] + "さん\n" + bot.rand_w('time\\mada.txt')
+                            g_vis = "public"
+                            bot.toot_res(post, "public", sec=5)
+                            with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                                f.write("active")
+                            return
+                        elif delta.total_seconds() >= 3600:
+                            print("◇Hit")
+                            post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
+                            g_vis = "public"
+                            bot.toot_res(post, "public", sec=5)
+                            with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                                f.write("active")
+                            return
+                    except:
+                        print("◇Hit_エラー回避")
                         post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
                         g_vis = "public"
                         bot.toot_res(post, "public", sec=5)
                         with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                             f.write("active")
-                        return
                 elif zzz == "active":
                     with codecs.open('at_time\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
                         nstr = f.read()
@@ -621,10 +698,13 @@ class check():
                 bot.toot_res(post, "public", sec=5)
                 with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                     f.write("good_night")
-                with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                    """
+                with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
                     zzz = json.load(f)
+                with codecs.open('dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                     zzz.update({"sleep":str(status["created_at"])})
                     f.write(str(zzz))
+                """
                 print("◇寝る人を記憶しました")
             """
             elif re.compile("こおり(.*)[ぽお]や[すし]").search(status['content']):
@@ -783,8 +863,32 @@ class game():
         content = Re1.text(status["content"])
         in_reply_to_id = None
         if re.compile('こおり(.*)みくじ(.*)(おねが(.*)い|お願(.*)い|[引ひ]([きく]|いて)|や[りる]|ください|ちょうだい|(宜|よろ)しく|ひとつ|し(て|たい))').search(content):
-            acc = status['account']
-            if acc['acct'] != "1":
+            if account['acct'] != "1":
+                def order(x):
+                    if x == "【大吉】":
+                        return 6
+                    elif x == "【中吉】":
+                        return 5
+                    elif x == "【小吉】":
+                        return 4
+                    elif x == "【吉】":
+                        return 3
+                    elif x == "【半吉】":
+                        return 2
+                    elif x == "【末吉】":
+                        return 1
+                    elif x == "【末小吉】":
+                        return 0
+                    elif x == "【凶】":
+                        return -1
+                    elif x == "【小凶】":
+                        return -2
+                    elif x == "【半凶】":
+                        return -3
+                    elif x == "【末凶】":
+                        return -4
+                    elif x == "【大凶】":
+                        return -5
                 try:
                     with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
                         nstr = json.load(f)
@@ -792,23 +896,36 @@ class game():
                     now_time = datetime.strptime(re.sub("T..:..:..\....Z", "", status['created_at']), '%Y-%m-%d')
                     if last_time != now_time:
                         print("◇Hit_try")
-                        post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
-                        bot.toot_res(post, "public", sec=6)
+                        post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                         c = {}
                         c.update({"omikuji_time":str(status["created_at"])})
+                        w = nstr["omikuji_lack"]
+                        n1 = order(w)
                         z = re.search("【(.+)】", post)
                         c.update({"omikuji_lack":z.group(1)})
+                        n2 = order(z.group(1))
+                        if n1 < n2:
+                            post = post + "\n前回より運気が上がりましたね。"
+                        elif  n1 > n2:
+                            post = post + "\n前回より運気が下がりましたね。"
+                        elif n2 == 6:
+                            post = post + "\nおめでとうございます。"
+                        elif n2 == -5:
+                            post = post + "\n……ご愁傷様です。元気だしてくださいね。"
+                        bot.toot_res(post, "public", sec=6)
                         with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
                             json.dump(c, f)
                         with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
                             a = {}
-                            a.update({re.sub("T..:..:..\....Z", "", status['created_at']): z.group(1)})
+                            a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
                             json.dump(a, f)
                     else:
-                        bot.toot_res("@" + acc['acct'] + " 一日一回ですよ！\n朝9時頃を越えたらもう一度お願いします！", "public", status["id"], sec=3)
+                        s = "\n本日あなたが引いた結果は【{}】です。".format(nstr["omikuji_lack"])
+                        bot.toot_res("@" + acc['acct'] + " 一日一回ですよ！\n朝9時頃を越えたらもう一度お願いします！" + s,
+                                     "public", status["id"], sec=3)
                 except:
                     print("◇hit_except")
-                    post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + acc['acct'] + " #こおりみくじ"
+                    post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                     bot.toot_res(post, "public", sec=6)
                     c = {}
                     c.update({"omikuji_time":str(status["created_at"])})
