@@ -106,7 +106,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
 
             elif notification["type"] == "favourite":  # 通知がベルのときです。
                 status = notification["status"]
-                print("{0}@{1}さんがベルを鳴らしました。".format(account["display_name"], account["acct"]))
+                print("{0} @{1} さんがベルを鳴らしました。".format(account["display_name"], account["acct"]))
                 if account["acct"] == "Knzk":
                     count.knzk_fav += 1
                     print("神崎にふぁぼられた数:" + str(count.knzk_fav))
@@ -124,8 +124,12 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                         count.knzk_fav = 0
 
             elif notification["type"] == "reblog":  # 通知がブーストのときです。
-                print("{0}@{1}さんがブーストしました。".format(account["display_name"], account["acct"]))
-                
+                print("{0} @{1} さんがブーストしました。".format(account["display_name"], account["acct"]))
+         """
+        except IncompleteRead:
+            print("【USER】接続が切れました。")
+            pass
+       
         except Exception as e:
             print("エラー情報【USER】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
@@ -135,6 +139,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                 f.white("\n")
             e_me()
             pass
+        """
         print("   ")
         pass
 
@@ -154,6 +159,10 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             ltl = threading.Thread(TL.local(status))
             ltl.run()
             pass
+         """
+        except IncompleteRead:
+            print("【LOCAL】接続が切れました。")
+            pass
         except Exception as e:
             print("エラー情報【 LOCAL 】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
@@ -164,6 +173,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             e_me()
             pass
         print("   ")
+        """
         pass
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
@@ -171,6 +181,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             print(str("===×on_delete【{}】×===").format(str(status_id)))
             pass
         except Exception as e:
+            """
             print("エラー情報【DELETE】\n" + traceback.format_exc())
             with open('error.log', 'a') as f:
                 jst_now = datetime.now(timezone('Asia/Tokyo'))
@@ -178,6 +189,7 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
                 traceback.print_exc(file=f)
                 f.white("\n")
             e_me()
+            """
             pass
 
 
@@ -708,7 +720,7 @@ class check():
                     zzz = json.load(f)
                 with codecs.open('dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                     zzz.update({"sleep":str(status["created_at"])})
-                    f.dump(zzz, f)
+                    json.dump(zzz, f)
                 print("◇寝る人を記憶しました")
             """
             elif re.compile("こおり(.*)[ぽお]や[すし]").search(status['content']):
@@ -932,6 +944,7 @@ class game():
                         bot.toot_res("@" + account['acct'] + " 一日一回ですよ！\n朝9時頃を越えたらもう一度お願いします！" + s,
                                      "public", status["id"], sec=3)
                 except FileNotFoundError:
+                    print(traceback.format_exc())
                     print("◇hit_New")
                     post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                     bot.toot_res(post, "public", sec=6)
@@ -945,6 +958,8 @@ class game():
                         a = {}
                         a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
                         json.dump(a, f)
+                except:
+                    e_me()
         return
 
     def aram(status):
