@@ -125,21 +125,12 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
 
             elif notification["type"] == "reblog":  # 通知がブーストのときです。
                 print("{0} @{1} さんがブーストしました。".format(account["display_name"], account["acct"]))
-         """
         except IncompleteRead:
             print("【USER】接続が切れました。")
             pass
-       
         except Exception as e:
-            print("エラー情報【USER】\n" + traceback.format_exc())
-            with open('error.log', 'a') as f:
-                jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white("【" + jst_now + "】\n")
-                traceback.print_exc(file=f)
-                f.white("\n")
             e_me()
             pass
-        """
         print("   ")
         pass
 
@@ -159,21 +150,11 @@ class Local(StreamListener):  # ここではLTLを監視する継承クラスに
             ltl = threading.Thread(TL.local(status))
             ltl.run()
             pass
-         """
+
         except IncompleteRead:
-            print("【LOCAL】接続が切れました。")
-            pass
-        except Exception as e:
-            print("エラー情報【 LOCAL 】\n" + traceback.format_exc())
-            with open('error.log', 'a') as f:
-                jst_now = datetime.now(timezone('Asia/Tokyo'))
-                f.white("【{}】\n".format(str(jst_now)))
-                traceback.print_exc(file=f)
-                f.white("\n")
             e_me()
             pass
         print("   ")
-        """
         pass
 
     def on_delete(self, status_id):  # トゥー消し警察の監視場になります。
@@ -573,14 +554,14 @@ class res():
                     now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
                     delta = now_time - last_time
                     if delta.total_seconds() >= 604800:
-                        to_r = bot.rand_w('time\\hallo.txt')
+                        to_r = bot.rand_w('time\\ohisa.txt')
                         print("◇Hit")
                         if account['display_name'] == "":
                             post = account['acct']+ "さん\n" + to_r
                         else:
                             post = account['display_name'] + "さん\n" + to_r
                         return bot.toot_res(post, "public", sec=5)
-                    elif delta.total_seconds() >= 72000:
+                    elif delta.total_seconds() >= 75600:
                         if now_time.hour in range(3, 9):
                             to_r = bot.rand_w('time\\kon.txt')
                         elif now_time.hour in range(9, 20):
@@ -593,7 +574,7 @@ class res():
                         else:
                             post = account['display_name'] + "さん\n" + to_r
                         return bot.toot_res(post, "public", sec=5)
-                    elif delta.total_seconds() >= 21600:
+                    elif delta.total_seconds() >= 28800:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
                         if account['display_name'] == "":
@@ -907,7 +888,8 @@ class game():
                         return -5
                 try:
                     with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
-                        nstr = json.load(f)
+                        if not f == "":
+                            nstr = json.load(f)
                     last_time = datetime.strptime(re.sub("T..:..:..\....Z", "", nstr["omikuji_time"]), '%Y-%m-%d')
                     now_time = datetime.strptime(re.sub("T..:..:..\....Z", "", status['created_at']), '%Y-%m-%d')
                     if last_time != now_time:
@@ -944,8 +926,22 @@ class game():
                         bot.toot_res("@" + account['acct'] + " 一日一回ですよ！\n朝9時頃を越えたらもう一度お願いします！" + s,
                                      "public", status["id"], sec=3)
                 except FileNotFoundError:
-                    print(traceback.format_exc())
                     print("◇hit_New")
+                    post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                    bot.toot_res(post, "public", sec=6)
+                    c = {}
+                    c.update({"omikuji_time":str(status["created_at"])})
+                    z = re.search("【(.+)】", post)
+                    c.update({"omikuji_lack":z.group(1)})
+                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                        json.dump(c, f)
+                    with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                        a = {}
+                        a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
+                        json.dump(a, f)
+                except json.decoder.JSONDecodeError:
+                    print(traceback.format_exc())
+                    print("◇hit_ReNew")
                     post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                     bot.toot_res(post, "public", sec=6)
                     c = {}
