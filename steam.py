@@ -400,7 +400,7 @@ class bot():
             gc.collect()
             count.CT = time()
             count.end = ing
-            z = threading.Timer(60, bot.t_forget)  # クールタイム伸ばした。
+            z = threading.Timer(30, bot.t_forget)  # クールタイム伸ばした。
             z.start()
 
     def BellBaku(fav):
@@ -593,7 +593,7 @@ class res():
 
     def res05(status):
         content = Re1.text(status["content"])
-        if re.compile("こおり(.*)[1-5][dD]\d+").search(content):
+        if re.compile("こおり(.*)\d+[dD]\d+").search(content):
             print("○hitしました♪")
             account = status["account"]
             post = "@" + str(account["acct"]) + "\n" + game.dice(content)
@@ -696,9 +696,12 @@ class check():
                 bot.toot_res(post, "public", sec=5)
                 with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                     f.write("good_night")
-                with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                try:
+                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                        zzz = {}
+                        zzz = json.load(f)
+                except:
                     zzz = {}
-                    zzz = json.load(f)
                 with codecs.open('dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                     zzz.update({"sleep":str(status["created_at"])})
                     json.dump(zzz, f)
@@ -802,7 +805,7 @@ class game():
             print(m)
             if int(m[1]) == 0:
                 result = "面がないので振りません"
-            elif int(m[0]) >= 51:
+            elif int(m[0]) >= 101:
                 result = "回数が多いので振りません"
             elif int(m[0]) == 0:
                 result = "回数0なので振りません"
@@ -848,7 +851,7 @@ class game():
                     l.append(result)
                 print(l)
                 result = '\n'.join(l)
-                if len(result) > 400:
+                if len(result) > 4900:
                     result = "文字数制限……"
         except:
             traceback.print_exc()
