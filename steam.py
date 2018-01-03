@@ -343,6 +343,7 @@ class TL():  # ここに受け取ったtootに対してどうするか追加し�
         account = status["account"]
         check.check01(status)
         if account["acct"] != "1":
+            res.adana(status)
             res.fav01(status)
             res.res01(status)
             res.res02(status)
@@ -493,16 +494,21 @@ class res():
         account = status["account"]
         content = re.sub("<p>|</p>", "", str(status['content']))
         try:
+            with codecs.open('dic_time\\adana\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
+                display_name = f.read()
+        except:
+            if account['display_name'] == "":
+                display_name = account['acct']+"さん"
+            else:
+                display_name = re.sub("@[a-zA-Z0-9]+|\s", "", account['display_name'])+"さん"
+        try:
             if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
                 try:
                     with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
                         zzz = f.read()
                 except:
                     print("◇初めての人に会いました。")
-                    if account['display_name'] == "":
-                        post = account['acct']+ "さん\n" + "はじめまして、よろしくお願いいたします。"
-                    else:
-                        post = account['display_name'] + "さん\n" + "はじめまして、よろしくお願いいたします。"
+                    post = display_name + "\n" + "はじめまして、よろしくお願いいたします。"
                     g_vis = "public"
                     bot.toot_res(post, "public", sec=5)
                     f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
@@ -510,40 +516,46 @@ class res():
                     f.close()
                     zzz = ""
                 if zzz == "good_night":
-                    try:
-                        with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
-                            nstr = json.load()
-                        tstr = re.sub("\....Z", "", nstr["sleep"])
-                        last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
-                        nstr = status['created_at']
-                        tstr = re.sub("\....Z", "", nstr)
-                        now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
-                        delta = now_time - last_time
-                        if delta.total_seconds() < 600:
-                            pass
-                        elif delta.total_seconds() >= 600:
-                            print("◇Hit")
-                            post = account['display_name'] + "さん\n" + bot.rand_w('time\\mada.txt')
-                            g_vis = "public"
-                            bot.toot_res(post, "public", sec=5)
-                            with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
-                                f.write("active")
-                            return
-                        elif delta.total_seconds() >= 3600:
-                            print("◇Hit")
-                            post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
-                            g_vis = "public"
-                            bot.toot_res(post, "public", sec=5)
-                            with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
-                                f.write("active")
-                            return
-                    except:
-                        print("◇Hit_エラー回避")
-                        post = account['display_name'] + "さん\n" + bot.rand_w('time\\oha.txt')
-                        g_vis = "public"
+                    if re.compile("まだ(寝|起|ねない|おきてる)|寝るのはまだ|寝(ない|ません)|起きてる").search(content):
+                        print("◇Hit")
+                        post = display_name + "、まだ起きてるんですね。了解です。"
                         bot.toot_res(post, "public", sec=5)
                         with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                             f.write("active")
+                    else:
+                        try:
+                            with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                                nstr = json.load(f)
+                            tstr = re.sub("\....Z", "", nstr["sleep"])
+                            last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                            nstr = status['created_at']
+                            tstr = re.sub("\....Z", "", nstr)
+                            now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                            delta = now_time - last_time
+                            if delta.total_seconds() < 600:
+                                pass
+                            elif delta.total_seconds() >= 600:
+                                print("◇Hit")
+                                post = display_name + "\n" + bot.rand_w('time\\mada.txt')
+                                bot.toot_res(post, "public", sec=5)
+                                with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                                    f.write("active")
+                                return
+                            elif delta.total_seconds() >= 3600:
+                                print("◇Hit")
+                                post = display_name + "\n" + bot.rand_w('time\\oha.txt')
+                                bot.toot_res(post, "public", sec=5)
+                                with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                                    f.write("active")
+                                return
+                        except:
+                            print("◇Hit_エラー回避")
+                            post = display_name + "\n" + bot.rand_w('time\\oha.txt')
+                            g_vis = "public"
+                            bot.toot_res(post, "public", sec=5)
+                            with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                                f.write("active")
+                                
                 elif zzz == "active":
                     with codecs.open('at_time\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
                         nstr = f.read()
@@ -556,10 +568,7 @@ class res():
                     if delta.total_seconds() >= 604800:
                         to_r = bot.rand_w('time\\ohisa.txt')
                         print("◇Hit")
-                        if account['display_name'] == "":
-                            post = account['acct']+ "さん\n" + to_r
-                        else:
-                            post = account['display_name'] + "さん\n" + to_r
+                        post = display_name + "\n" + to_r
                         return bot.toot_res(post, "public", sec=5)
                     elif delta.total_seconds() >= 75600:
                         if now_time.hour in range(3, 9):
@@ -569,18 +578,12 @@ class res():
                         else:
                             to_r = bot.rand_w('time\\oha.txt')
                         print("◇Hit")
-                        if account['display_name'] == "":
-                            post = account['acct']+ "さん\n" + to_r
-                        else:
-                            post = account['display_name'] + "さん\n" + to_r
+                        post = display_name + "\n" + to_r
                         return bot.toot_res(post, "public", sec=5)
                     elif delta.total_seconds() >= 28800:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
-                        if account['display_name'] == "":
-                            post = account['acct']+ "さん\n" + to_r
-                        else:
-                            post = account['display_name'] + "さん\n" + to_r
+                        post = display_name + "\n" + to_r
                         return bot.toot_res(post, "public", sec=5)
         except:
             print("◇失敗しました。")
@@ -590,7 +593,6 @@ class res():
             e_me()
 
 
-
     def res05(status):
         content = Re1.text(status["content"])
         if re.compile("こおり(.*)\d+[dD]\d+").search(content):
@@ -598,6 +600,18 @@ class res():
             account = status["account"]
             post = "@" + str(account["acct"]) + "\n" + game.dice(content)
             bot.toot_res(post, status["visibility"], None, None, "サイコロ振りますね。", 3)
+
+    def adana(status):
+        account = status["account"]
+        content = Re1.text(status["content"])
+        if re.compile("こおり.*あだ名「(.+)」って呼んで").search(content):
+            print("○hitしました♪")
+            ad = re.search("こおり.*あだ名「(.+)」って呼んで", content)
+            adan = ad.group(1)
+            with codecs.open('dic_time\\adana\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                f.write(adan)
+            post = "分かりました。\n次からは「{}」ってお呼びしますね。".format(adan)
+            bot.toot_res(post, status["visibility"], sec = 4)
 
     def y(status):
         content = Re1.text(status["content"])
@@ -685,14 +699,19 @@ class check():
     def check03(status):  # お休みする人を記憶
         account = status["account"]
         content = re.sub("<p>|</p>", "", str(status['content']))
+        try:
+            with codecs.open('dic_time\\adana\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
+                display_name = f.read()
+        except:
+            if account['display_name'] == "":
+                display_name = account['acct']+"さん"
+            else:
+                display_name = re.sub("@[a-zA-Z0-9]+|\s", "", account['display_name'])+"さん"
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
-            if re.compile("[寝ね](ます|る|マス)([よかぞね]?|[…。うぅー～！]+)$|"
+            if re.compile("[寝ね](ます|る|マス)([よかぞね…。うぅー～！]+)$|"
                           "[寝ね](ます|る|マス)(.*)[ぽお]や[すし]").search(content):
                 print("◇Hit")
-                if account['display_name'] == "":
-                    post = account['acct']+ "さん\n" + bot.rand_w('time\\oya.txt')
-                else:
-                    post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
+                post = display_name + "\n" + bot.rand_w('time\\oya.txt')
                 bot.toot_res(post, "public", sec=5)
                 with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                     f.write("good_night")
