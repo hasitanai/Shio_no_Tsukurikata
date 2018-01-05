@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from mastodon import *
 from time import time, sleep
 import feedparser
@@ -536,21 +534,21 @@ class res():
                                 pass
                             elif delta.total_seconds() >= 600:
                                 print("◇Hit")
-                                post = display_name + "\n" + bot.rand_w('time\\mada.txt')
+                                post = display_name + "、" + bot.rand_w('time\\mada.txt')
                                 bot.toot_res(post, "public", sec=5)
                                 with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                                     f.write("active")
                                 return
                             elif delta.total_seconds() >= 3600:
                                 print("◇Hit")
-                                post = display_name + "\n" + bot.rand_w('time\\oha.txt')
+                                post = display_name + "、" + bot.rand_w('time\\oha.txt')
                                 bot.toot_res(post, "public", sec=5)
                                 with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                                     f.write("active")
                                 return
                         except:
                             print("◇Hit_エラー回避")
-                            post = display_name + "\n" + bot.rand_w('time\\oha.txt')
+                            post = display_name + "、" + bot.rand_w('time\\oha.txt')
                             g_vis = "public"
                             bot.toot_res(post, "public", sec=5)
                             with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
@@ -578,12 +576,12 @@ class res():
                         else:
                             to_r = bot.rand_w('time\\oha.txt')
                         print("◇Hit")
-                        post = display_name + "\n" + to_r
+                        post = display_name + "、" + to_r
                         return bot.toot_res(post, "public", sec=5)
                     elif delta.total_seconds() >= 28800:
                         to_r = bot.rand_w('time\\hallo.txt')
                         print("◇Hit")
-                        post = display_name + "\n" + to_r
+                        post = display_name + "、" + to_r
                         return bot.toot_res(post, "public", sec=5)
         except:
             print("◇失敗しました。")
