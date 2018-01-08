@@ -1029,8 +1029,7 @@ class Loading():
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             f = func(*args, **kwargs)
-            res("Streaming開始です【{}】").format(f)
-
+            print("Streaming開始です【{}】".format(f))
         return wrapper
 
     @deco
