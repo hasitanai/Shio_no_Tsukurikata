@@ -60,7 +60,7 @@ class Re1():  # Content整頓用関数
                        str(text)))
 
 
-class Log():  # toot記録用クラス٩(๑❛ᴗ❛๑)۶
+class Log():  # toot記録用クラス
     def __init__(self, status):
         self.account = status["account"]
         self.mentions = status["mentions"]
