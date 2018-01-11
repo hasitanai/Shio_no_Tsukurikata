@@ -18,6 +18,7 @@ osフォルダ参照用。tracebackはエラー報告のデバック用。
 datetime, timezoneは時間記録用。
 warningsは……分からん！！！！
 今後入れる予定のモジュ「Numpy」
+
 """
 
 # プロンプトで起動したい人のための装置
@@ -709,7 +710,7 @@ class check():
             if re.compile("[寝ね](ます|る|マス)([よかぞね…。うぅー～！]+)$|"
                           "[寝ね](ます|る|マス)(.*)[ぽお]や[すし]").search(content):
                 print("◇Hit")
-                post = display_name + "\n" + bot.rand_w('time\\oya.txt')
+                post = display_name + "、" + bot.rand_w('time\\oya.txt')
                 bot.toot_res(post, "public", sec=5)
                 with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                     f.write("good_night")
