@@ -707,7 +707,7 @@ class check():
             else:
                 display_name = re.sub("@[a-zA-Z0-9]+|\s", "", account['display_name'])+"さん"
         if account["acct"] != "1":  # 一人遊びで挨拶しないようにっするための処置
-            if re.compile("[寝ね](ます|る|マス)([よかぞね…。うぅー～！]+)$|"
+            if re.compile("[寝ね](ます|る|マス)([よかぞね…。うぅー～！]*)$|"
                           "[寝ね](ます|る|マス)(.*)[ぽお]や[すし]").search(content):
                 print("◇Hit")
                 post = display_name + "、" + bot.rand_w('time\\oya.txt')
@@ -724,15 +724,6 @@ class check():
                     zzz.update({"sleep":str(status["created_at"])})
                     json.dump(zzz, f)
                 print("◇寝る人を記憶しました")
-            """
-            elif re.compile("こおり(.*)[ぽお]や[すし]").search(status['content']):
-                print("◇Hit")
-                if account['display_name'] == "":
-                    post = account['acct']+ "さん\n" + bot.rand_w('time\\oya.txt')
-                else:
-                    post = account['display_name'] + "さん\n" + bot.rand_w('time\\oya.txt')
-                bot.toot_res(post, "public", sec=5)
-            """
 
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
         account = status["account"]
