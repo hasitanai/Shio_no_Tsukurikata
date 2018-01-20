@@ -986,7 +986,6 @@ class game():
         return post, sec
 
     def land(status):
-        in_reply_to_id = None
         content = Re1.text(status["content"])
         if re.compile("(.+)(開園)$").search(content):
             print("◇Hit")
@@ -998,7 +997,6 @@ class game():
                 ba.start()
 
     def bals(status):
-        in_reply_to_id = None
         if re.compile("バルス|ﾊﾞﾙｽ|ばるす|BA(.?)RU(.?)SU").search(status['content']):
             print("◇Hit")
             acc = status['account']
@@ -1011,7 +1009,10 @@ class game():
                 ba = threading.Timer(0, bot.toot, [post, "public", None, None, None])
                 ba.start()
 
-    def mental_healther(staus):
+    def mental_healther(status):
+        pass
+
+    def quota(status):
         pass
 
 
