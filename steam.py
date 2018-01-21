@@ -1013,6 +1013,8 @@ class game():
         pass
 
     def quota(status):
+        path = "./quota"
+        os.path.exists(path)
         pass
 
 
