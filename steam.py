@@ -1013,8 +1013,10 @@ class game():
         pass
 
     def quota(status):
-        path = "./quota"
-        os.path.exists(path)
+        account = status["account"]
+        path = "./quota" + account["acct"]
+        if os.path.exists(path):
+            t
         pass
 
 
