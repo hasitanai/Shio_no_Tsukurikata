@@ -1022,6 +1022,11 @@ class game():
             pass
         pass
 
+    def anka(status):
+        #if :
+        #    dedededen
+        pass
+
 
 class Loading():
     def deco(func):
