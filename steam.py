@@ -533,16 +533,16 @@ class res():
                             delta = now_time - last_time
                             if delta.total_seconds() < 600:
                                 pass
-                            elif delta.total_seconds() >= 600:
+                            elif delta.total_seconds() >= 3600:
                                 print("◇Hit")
-                                post = display_name + "、" + bot.rand_w('time\\mada.txt')
+                                post = display_name + "、" + bot.rand_w('time\\oha.txt')
                                 bot.toot_res(post, "public", sec=5)
                                 with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                                     f.write("active")
                                 return
-                            elif delta.total_seconds() >= 3600:
+                            elif delta.total_seconds() >= 600:
                                 print("◇Hit")
-                                post = display_name + "、" + bot.rand_w('time\\oha.txt')
+                                post = display_name + "、" + bot.rand_w('time\\mada.txt')
                                 bot.toot_res(post, "public", sec=5)
                                 with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                                     f.write("active")
