@@ -1016,6 +1016,7 @@ class game():
         account = status["account"]
         path = "./quota" + account["acct"]
         if os.path.exists(path):
+            # re.compile("こおり.*").search(status['content']):
             #記憶させる装置
             #教えるするようにする装置
             #お知らせするようにする装置
