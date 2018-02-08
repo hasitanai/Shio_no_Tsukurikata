@@ -1028,6 +1028,8 @@ class game():
         #    dedededen
         pass
 
+    def minder(status):
+        pass
 
 class Loading():
     def deco(func):
