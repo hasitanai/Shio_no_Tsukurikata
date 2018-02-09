@@ -612,6 +612,24 @@ class res():
             post = "分かりました。\n次からは「{}」ってお呼びしますね。".format(adan)
             bot.toot_res(post, status["visibility"], sec = 4)
 
+    def minder(status):
+        account = status["account"]
+        content = Re1.text(status["content"])
+        path = "./minder" + account["acct"]
+        if os.path.exists(path):
+            if re.compile("こおり.*(ノルマ|minder|マインダー|伝言)「(.+)」").search(status['content']):
+                print("○マインダーを受け付けます。")
+                pass
+                #記憶させる装置
+                #ad = re.search("こおり.*(ノルマ|minder|マインダー|伝言)「(.+)」", content)
+                #adan = ad.group(1)
+                #with codecs.open('dic_time\\adana\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                #    f.write(adan)
+                #教えるするようにする装置
+                #お知らせするようにする装置
+            pass
+        pass
+
     def y(status):
         content = Re1.text(status["content"])
         account = status["account"]
@@ -1012,24 +1030,11 @@ class game():
     def mental_healther(status):
         pass
 
-    def quota(status):
-        account = status["account"]
-        path = "./quota" + account["acct"]
-        if os.path.exists(path):
-            # re.compile("こおり.*").search(status['content']):
-            #記憶させる装置
-            #教えるするようにする装置
-            #お知らせするようにする装置
-            pass
-        pass
-
     def anka(status):
         #if :
         #    dedededen
         pass
 
-    def minder(status):
-        pass
 
 class Loading():
     def deco(func):
