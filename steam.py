@@ -344,10 +344,10 @@ class TL():  # ここに受け取ったtootに対してどうするか追加し�
         if account["acct"] != "1":
             res.adana(status)
             res.fav01(status)
+            res.res04(status) #挨拶を先にするようにする
             res.res01(status)
             res.res02(status)
             res.res03(status)
-            res.res04(status)
             res.res05(status)
             res.y(status)
             game.omikuji(status)
