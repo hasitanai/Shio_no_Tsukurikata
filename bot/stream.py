@@ -12,7 +12,8 @@ import numpy as np
 print (__name__)
 mastodon = None
 k = "1"
-os.chdir("./bot")
+if not __name__ == '__main__':
+    os.chdir("./bot")
 
 
 def setup0():
