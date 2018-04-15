@@ -1,46 +1,32 @@
 from mastodon import *
 from time import time, sleep
-import feedparser
+import feedparser, pickle
 import re, sys, os, csv, json, codecs, io, gc
 import threading, requests, random
-from datetime import datetime, date
-from pytz import timezone
+from datetime import datetime, timedelta, timezone
 import warnings, traceback
 from xml.sax.saxutils import unescape as unesc
+from dateutil import zoneinfo, tz  # New!
 import numpy as np
 
-print (__name__)
-mastodon = None
-k = "1"
-os.chdir("./bot")
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
+                              encoding=sys.stdout.encoding,
+                              errors='backslashreplace',
+                              line_buffering=sys.stdout.line_buffering)
 
+# これはよく分かってない
+warnings.simplefilter("ignore", UnicodeWarning)
 
-def setup0():
-    global mastodon
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
-                                  encoding=sys.stdout.encoding,
-                                  errors='backslashreplace',
-                                  line_buffering=sys.stdout.line_buffering)
+url_ins = open("login\\instance.txt").read()  # instanceのアドレス　例：https://knzk.me
 
-    # これはよく分かってない
-    warnings.simplefilter("ignore", UnicodeWarning)
+mastodon = Mastodon(
+    client_id="login\\cred.txt",
+    access_token="login\\auth.txt",
+    api_base_url=url_ins)  # インスタンス
 
-    url_ins = open("login\\instance.txt").read()  # instanceのアドレス　例：https://knzk.me
+print("こおり「ログイン、完了しました。」")
 
-    mastodon = Mastodon(
-        client_id="login\\cred.txt",
-        access_token="login\\auth.txt",
-        api_base_url=url_ins)  # インスタンス
-
-    print("こおり「ログイン、完了しました。」")
-
-
-def setup1(api, t):
-    global mastodon
-    global k
-    mastodon = api
-    k = t
-
+JST = timezone(timedelta(hours=+9), 'JST')
 
 def back01():
     print("---timeline遡りチェックテスト---")
@@ -107,11 +93,10 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                     count.knzk_fav += 1
                     print("神崎にふぁぼられた数:" + str(count.knzk_fav))
                     if count.knzk_fav == 10:
-                        f = codecs.open('res\\fav_knzk.txt', 'r', 'utf-8')
-                        l = []
-                        for x in f:
-                            l.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                        f.close()
+                        with codecs.open('bot\\res\\fav_knzk.txt', 'r', 'utf-8') as f:
+                            l = []
+                            for x in f:
+                                l.append(x.rstrip("\r\n").replace('\\n', '\n'))
                         m = len(l)
                         s = random.randint(1, m)
                         post = (l[s - 1])
@@ -231,13 +216,14 @@ class men():  # メンションに対する処理です。
                             return -5
 
                     try:
-                        with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                        with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
                             nstr = json.load(f)
-                        last_time = datetime.strptime(re.sub("T..:..:..\....Z", "", nstr["omikuji_time"]), '%Y-%m-%d')
-                        now_time = datetime.strptime(re.sub("T..:..:..\....Z", "", status['created_at']), '%Y-%m-%d')
+                        last_time = datetime.strptime(
+                            re.sub(" ..:..:...*", "", str(bot.delta(str(nstr["omikuji_time"])))), '%Y-%m-%d')
+                        now_time = status['created_at']
                         if last_time != now_time:
                             print("◇Hit_try")
-                            post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                            post = bot.rand_w('bot\\game' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                             c = {}
                             c.update({"omikuji_time": str(status["created_at"])})
                             w = nstr["omikuji_lack"]
@@ -255,15 +241,16 @@ class men():  # メンションに対する処理です。
                                 post = post + "\n前回より運気が下がりましたね。"
                             elif n1 == n2:
                                 post = post + "\n前回と同じ結果になりましたね。"
-                            with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                            with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
                                 json.dump(c, f)
-                            with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'r',
+                            with codecs.open('data\\dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'r',
                                              'UTF-8') as f:
                                 a = {}
                                 a = json.load(f)
-                            with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w',
+                            with codecs.open('data\\dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w',
                                              'UTF-8') as f:
-                                a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
+                                a.update({re.sub(" \d{2}:\d{2}:\d{2}\.\d{6}\+00:00", "",
+                                                 str(status['created_at'])): order(z.group(1))})
                                 json.dump(a, f)
                         else:
                             s = "\n本日あなたが引いた結果は【{}】です。".format(nstr["omikuji_lack"])
@@ -271,16 +258,18 @@ class men():  # メンションに対する処理です。
                                          "public", status["id"], sec=3)
                     except FileNotFoundError:
                         print("◇hit_New")
-                        post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                        post = bot.rand_w('bot\\game' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                         c = {}
                         c.update({"omikuji_time": str(status["created_at"])})
                         z = re.search("【(.+)】", post)
                         c.update({"omikuji_lack": z.group(1)})
-                        with codecs.open('dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                        with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                             json.dump(c, f)
-                        with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                        with codecs.open('data\\dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w',
+                                         'UTF-8') as f:
                             a = {}
-                            a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
+                            a.update({re.sub(" \d{2}:\d{2}:\d{2}\.\d{6}\+00:00", "", str(status['created_at'])): order(
+                                z.group(1))})
                             json.dump(a, f)
                     g_vis = status["visibility"]
                     sec = 5
@@ -289,20 +278,18 @@ class men():  # メンションに対する処理です。
                 print("◇Hit")
                 sleep(5)
                 l = []
-                f = codecs.open('res\\takoyaki.txt', 'r', 'utf-8')
-                for x in f:
-                    l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
-                f.close()
+                with codecs.open('bot\\/1\\takoyaki.txt', 'r', 'utf-8') as f:
+                    for x in f:
+                        l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
                 m = len(l)
                 s = random.randint(1, m)
                 post = "@" + str(account["acct"]) + "\n" + l[s - 1]
-                f = codecs.open('res_med\\takoyaki.txt', 'r', 'utf-8')
-                j = []
-                for x in f:
-                    j.append(x.rstrip("\r\n").replace('\\n', '\n'))
-                f.close()
+                with codecs.open('bot\\res_med\\takoyaki.txt', 'r', 'utf-8') as f:
+                    j = []
+                    for x in f:
+                        j.append(x.rstrip("\r\n").replace('\\n', '\n'))
                 xxx = re.sub("(.*)\.", "", j[s - 1])
-                media_files = [mastodon.media_post("media\\" + j[s - 1], "image/" + xxx)]
+                media_files = [mastodon.media_post("bot\\media\\" + j[s - 1], "image/" + xxx)]
                 print("◇メディア選択しました")
                 print(j[s - 1])
                 g_vis = "public"
@@ -404,6 +391,20 @@ class bot():
             z = threading.Timer(30, bot.t_forget)  # クールタイム伸ばした。
             z.start()
 
+    def delta(nstr):
+        if re.search("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", nstr):
+            tstr = re.sub("\....Z", "", nstr)
+            a = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+            return a.replace(tzinfo=tz.tzutc())
+        elif re.search("\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\+00:00", nstr):
+            tstr = re.sub("\+00:00", "", nstr)
+            a = datetime.strptime(tstr, '%Y-%m-%d %H:%M:%S.%f')
+            return a.replace(tzinfo=tz.tzutc())
+        elif re.search("\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}", nstr):
+            a = datetime.strptime(nstr, '%Y-%m-%d %H:%M:%S.%f')
+            return a.replace(tzinfo=tz.tzutc())
+
+
     def BellBaku(fav):
         s = time()
         while 1:
@@ -427,11 +428,10 @@ class bot():
         print("◇Reb")
 
     def rand_w(txt_deta):
-        f = codecs.open(txt_deta, 'r', 'utf-8')
-        l = []
-        for x in f:
-            l.append(x.rstrip("\r\n").replace('\\n', '\n'))
-        f.close()
+        with codecs.open(txt_deta, 'r', 'utf-8') as f:
+            l = []
+            for x in f:
+                l.append(x.rstrip("\r\n").replace('\\n', '\n'))
         m = len(l)
         s = random.randint(1, m)
         return l[s - 1]
@@ -449,7 +449,7 @@ class bot():
 class res():
     def res01(status):  # お返事関数シンプル版。
         content = Re1.text(status["content"])
-        with codecs.open('reply.csv', 'r', "UTF-8", "ignore") as f:
+        with codecs.open('bot\\reply.csv', 'r', "UTF-8", "ignore") as f:
             for row in csv.reader(f):
                 if re.compile(row[2]).search(content):
                     print("◇Hit")
@@ -458,33 +458,33 @@ class res():
 
     def res02(status):  # 該当するセリフからランダムtootが選ばれてトゥートします。
         content = Re1.text(status["content"])
-        with codecs.open('reply_random.csv', 'r', "UTF-8", "ignore") as f:
+        with codecs.open('bot\\reply_random.csv', 'r', "UTF-8", "ignore") as f:
             for row in csv.reader(f):
                 if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
                     print("◇Hit")
-                    post = bot.rand_w('res\\' + row[1] + '.txt')
+                    post = bot.rand_w('bot\\res\\' + row[1] + '.txt')
                     bot.toot_res(post, "public", sec=int(row[0]))
                     return
 
     def res03(status):  # 該当する文字があるとメディアをアップロードしてトゥートしてくれます。
         content = Re1.text(status["content"])
-        with codecs.open('reply_media.csv', 'r', "UTF-8", "ignore") as f:
+        with codecs.open('bot\\reply_media.csv', 'r', "UTF-8", "ignore") as f:
             for row in csv.reader(f):
                 if re.compile(row[2]).search(re.sub("<p>|</p>", "", content)):
                     print("◇Hit")
                     l = []
-                    with codecs.open('res\\' + row[1] + '.txt', 'r', 'utf-8') as f:
+                    with codecs.open('bot\\res\\' + row[1] + '.txt', 'r', 'utf-8') as f:
                         for x in f:
                             l.append(x.rstrip("\r\n|\ufeff").replace('\\n', '\n'))
                     m = len(l)
                     s = random.randint(1, m)
                     post = l[s - 1]
-                    with codecs.open('res_med\\' + row[3] + '.txt', 'r', 'utf-8') as f:
+                    with codecs.open('bot\\res_med\\' + row[3] + '.txt', 'r', 'utf-8') as f:
                         j = []
                         for x in f:
                             j.append(x.rstrip("\r\n").replace('\\n', '\n'))
                     xxx = re.sub("(.*)\.", "", j[s - 1])
-                    media_files = [mastodon.media_post("media\\" + j[s - 1])]
+                    media_files = [mastodon.media_post("bot\\media\\" + j[s - 1])]
                     print("◇メディア選択しました")
                     print(j[s - 1])
                     bot.toot_res(post, "public", None, media_files, None, int(row[0]))
@@ -494,7 +494,7 @@ class res():
         account = status["account"]
         content = re.sub("<p>|</p>", "", str(status['content']))
         try:
-            with codecs.open('dic_time\\adana\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
+            with codecs.open('data\\dic_time\\adana\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
                 display_name = f.read()
         except:
             if account['display_name'] == "":
@@ -504,92 +504,90 @@ class res():
         try:
             if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
                 try:
-                    with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
+                    with codecs.open('data\\oyasumi\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
                         zzz = f.read()
                 except:
                     print("◇初めての人に会いました。")
                     post = display_name + "\n" + "はじめまして、よろしくお願いいたします。"
                     g_vis = "public"
                     bot.toot_res(post, "public", sec=5)
-                    f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-                    f.write("active")
-                    f.close()
+                    with codecs.open('data\\oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                        f.write("active")
                     zzz = ""
                 if zzz == "good_night":
                     if re.compile("まだ(寝|起|ねない|おきてる)|寝るのはまだ|寝(ない|ません)|起きてる").search(content):
                         print("◇Hit")
                         post = display_name + "、まだ起きてるんですね。了解です。"
                         bot.toot_res(post, "public", sec=5)
-                        with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                        with codecs.open('data\\oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                             f.write("active")
                     else:
                         try:
-                            with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                            with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
                                 nstr = json.load(f)
-                            tstr = re.sub("\....Z", "", nstr["sleep"])
-                            last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
-                            nstr = status['created_at']
-                            tstr = re.sub("\....Z", "", nstr)
-                            now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                            last_time = bot.delta(nstr["sleep"])
+                            now_time = status['created_at']
+                            last_time.replace(tzinfo=tz.tzutc()).astimezone(zoneinfo.gettz('Asia/Tokyo'))
+                            now_time.replace(tzinfo=tz.tzutc()).astimezone(zoneinfo.gettz('Asia/Tokyo'))
                             delta = now_time - last_time
                             if delta.total_seconds() < 600:
                                 pass
                             elif delta.total_seconds() >= 3600:
                                 print("◇Hit")
-                                post = display_name + "、" + bot.rand_w('time\\oha.txt')
+                                post = display_name + "、" + bot.rand_w('bot\\time\\oha.txt')
                                 bot.toot_res(post, "public", sec=5)
-                                with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                                with codecs.open('data\\oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                                     f.write("active")
                                 return
                             elif delta.total_seconds() >= 600:
                                 print("◇Hit")
-                                post = display_name + "、" + bot.rand_w('time\\mada.txt')
+                                post = display_name + "、" + bot.rand_w('bot\\time\\mada.txt')
                                 bot.toot_res(post, "public", sec=5)
-                                with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                                with codecs.open('data\\oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                                     f.write("active")
                                 return
                         except:
                             print("◇Hit_エラー回避")
-                            post = display_name + "、" + bot.rand_w('time\\oha.txt')
+                            post = display_name + "、" + bot.rand_w('bot\\time\\oha.txt')
                             g_vis = "public"
                             bot.toot_res(post, "public", sec=5)
-                            with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                            with codecs.open('data\\oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                                 f.write("active")
 
                 elif zzz == "active":
-                    with codecs.open('at_time\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
-                        nstr = f.read()
-                    tstr = re.sub("\....Z", "", nstr)
-                    last_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
-                    nstr = status['created_at']
-                    tstr = re.sub("\....Z", "", nstr)
-                    now_time = datetime.strptime(tstr, '%Y-%m-%dT%H:%M:%S')
+                    with open('data\\at_time\\' + account["acct"] + '.txt', 'r') as f:
+                        last_time = f.read()
+                    last_time = bot.delta(last_time)
+                    now_time = status['created_at']  # \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d{6}+00:00
+                    last_time.replace(tzinfo=tz.tzutc()).astimezone(JST)
+                    now_time.replace(tzinfo=tz.tzutc()).astimezone(JST)
+                    print(last_time)
+                    print(now_time)
                     delta = now_time - last_time
                     if delta.total_seconds() >= 604800:
-                        to_r = bot.rand_w('time\\ohisa.txt')
+                        to_r = bot.rand_w('bot\\time\\ohisa.txt')
                         print("◇Hit")
                         post = display_name + "\n" + to_r
                         return bot.toot_res(post, "public", sec=5)
                     elif delta.total_seconds() >= 75600:
-                        if now_time.hour in range(3, 9):
-                            to_r = bot.rand_w('time\\kon.txt')
-                        elif now_time.hour in range(9, 20):
-                            to_r = bot.rand_w('time\\kob.txt')
+                        if now_time.hour in range(4, 12):
+                            to_r = bot.rand_w('bot\\time\\oha.txt')
+                        elif now_time.hour in range(12, 20):
+                            to_r = bot.rand_w('bot\\time\\kon.txt')
                         else:
-                            to_r = bot.rand_w('time\\oha.txt')
+                            to_r = bot.rand_w('bot\\time\\kob.txt')
                         print("◇Hit")
                         post = display_name + "、" + to_r
                         return bot.toot_res(post, "public", sec=5)
                     elif delta.total_seconds() >= 28800:
-                        to_r = bot.rand_w('time\\hallo.txt')
+                        to_r = bot.rand_w('bot\\time\\hallo.txt')
                         print("◇Hit")
                         post = display_name + "、" + to_r
                         return bot.toot_res(post, "public", sec=5)
         except:
             print("◇失敗しました。")
-            f = codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')
-            f.write("active")
-            f.close()
+            with codecs.open('data\\oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8')as f:
+                f.write("active")
             e_me()
 
     def res05(status):
@@ -607,7 +605,7 @@ class res():
             print("○hitしました♪")
             ad = re.search("こおり.*あだ名「(.+)」って呼んで", content)
             adan = ad.group(1)
-            with codecs.open('dic_time\\adana\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+            with codecs.open('data\\dic_time\\adana\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                 f.write(adan)
             post = "分かりました。\n次からは「{}」ってお呼びしますね。".format(adan)
             bot.toot_res(post, status["visibility"], sec=4)
@@ -623,7 +621,7 @@ class res():
                 # 記憶させる装置
                 # ad = re.search("こおり.*(ノルマ|minder|マインダー|伝言)「(.+)」", content)
                 # adan = ad.group(1)
-                # with codecs.open('dic_time\\adana\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                # with codecs.open('data\\dic_time\\adana\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                 #    f.write(adan)
                 # 教えるするようにする装置
                 # お知らせするようにする装置
@@ -704,20 +702,20 @@ class check():
         account = status["account"]
         created_at = status['created_at']
         non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-        with codecs.open('acct\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+        with codecs.open('data\\acct\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
             f.write(str(status["account"]).translate(non_bmp_map))
 
     def check02(status):  # 最後にトゥートした時間の記憶
         account = status["account"]
         created_at = status['created_at']
-        with codecs.open('at_time\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
-            f.write(str(status["created_at"]))  # \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z
+        with open('data\\at_time\\' + account["acct"] + '.txt', 'w') as f:
+            f.write(str(status["created_at"]))
 
     def check03(status):  # お休みする人を記憶
         account = status["account"]
         content = re.sub("<p>|</p>", "", str(status['content']))
         try:
-            with codecs.open('dic_time\\adana\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
+            with codecs.open('data\\dic_time\\adana\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
                 display_name = f.read()
         except:
             if account['display_name'] == "":
@@ -728,17 +726,17 @@ class check():
             if re.compile("[寝ね](ます|る|マス)([よかぞね…。うぅー～！]*)$|"
                           "[寝ね](ます|る|マス)(.*)[ぽお]や[すし]").search(content):
                 print("◇Hit")
-                post = display_name + "、" + bot.rand_w('time\\oya.txt')
+                post = display_name + "、" + bot.rand_w('bot\\time\\oya.txt')
                 bot.toot_res(post, "public", sec=5)
-                with codecs.open('oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                with codecs.open('data\\oyasumi\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                     f.write("good_night")
                 try:
-                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                    with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
                         zzz = {}
                         zzz = json.load(f)
                 except:
                     zzz = {}
-                with codecs.open('dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                     zzz.update({"sleep": str(status["created_at"])})
                     json.dump(zzz, f)
                 print("◇寝る人を記憶しました")
@@ -789,7 +787,7 @@ class count():
     end = 0
     learn_toot = ""
     twotwo = 0
-    with codecs.open('game\\bals.txt', 'r', 'utf-8') as f:
+    with codecs.open('bot\\game\\bals.txt', 'r', 'utf-8') as f:
         bals = f.read()
         bals = int(bals)
     y = False
@@ -919,14 +917,15 @@ class game():
                         return -5
 
                 try:
-                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                    with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
                         if not f == "":
                             nstr = json.load(f)
-                    last_time = datetime.strptime(re.sub("T..:..:..\....Z", "", nstr["omikuji_time"]), '%Y-%m-%d')
-                    now_time = datetime.strptime(re.sub("T..:..:..\....Z", "", status['created_at']), '%Y-%m-%d')
+                    last_time = datetime.strptime(re.sub(" ..:..:...*", "", str(bot.delta(str(nstr["omikuji_time"])))), '%Y-%m-%d')
+                    # now_time = datetime.strptime(re.sub("T..:..:..\....Z", "", status['created_at']), '%Y-%m-%d')
+                    now_time = status['created_at']
                     if last_time != now_time:
                         print("◇Hit_try")
-                        post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                        post = bot.rand_w('bot\\game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                         c = {}
                         c.update({"omikuji_time": str(status["created_at"])})
                         w = nstr["omikuji_lack"]
@@ -945,13 +944,15 @@ class game():
                         elif n1 == n2:
                             post = post + "\n前回と同じ結果になりましたね。"
                         bot.toot_res(post, "public", sec=6)
-                        with codecs.open('dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
+                        with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'w+', 'UTF-8') as f:
                             json.dump(c, f)
-                        with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
+                        with codecs.open('data\\dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'r', 'UTF-8') as f:
                             a = {}
                             a = json.load(f)
-                        with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
-                            a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
+                        with codecs.open('data\\dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w',
+                                         'UTF-8') as f:
+                            a.update({re.sub(" \d{2}:\d{2}:\d{2}\.\d{6}\+00:00", "", str(status['created_at'])): order(
+                                z.group(1))})
                             json.dump(a, f)
                     else:
                         s = "\n本日あなたが引いた結果は【{}】です。".format(nstr["omikuji_lack"])
@@ -959,32 +960,32 @@ class game():
                                      "public", status["id"], sec=3)
                 except FileNotFoundError:
                     print("◇hit_New")
-                    post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                    post = bot.rand_w('bot\\game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                     bot.toot_res(post, "public", sec=6)
                     c = {}
                     c.update({"omikuji_time": str(status["created_at"])})
                     z = re.search("【(.+)】", post)
                     c.update({"omikuji_lack": z.group(1)})
-                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                    with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                         json.dump(c, f)
-                    with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                    with codecs.open('data\\dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                         a = {}
-                        a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
+                        a.update({re.sub(" \d{2}:\d{2}:\d{2}\.\d{6}\+00:00", "", str(status['created_at'])): order(z.group(1))})
                         json.dump(a, f)
                 except json.decoder.JSONDecodeError:
                     print(traceback.format_exc())
                     print("◇hit_ReNew")
-                    post = bot.rand_w('game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
+                    post = bot.rand_w('bot\\game\\' + 'kuji' + '.txt') + " " + "@" + account['acct'] + " #こおりみくじ"
                     bot.toot_res(post, "public", sec=6)
                     c = {}
                     c.update({"omikuji_time": str(status["created_at"])})
                     z = re.search("【(.+)】", post)
                     c.update({"omikuji_lack": z.group(1)})
-                    with codecs.open('dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                    with codecs.open('data\\dic_time\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                         json.dump(c, f)
-                    with codecs.open('dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
+                    with codecs.open('data\\dic_time\\omikuji_diary\\' + account["acct"] + '.json', 'w', 'UTF-8') as f:
                         a = {}
-                        a.update({re.sub("T..:..:..\....Z", "", status['created_at']): order(z.group(1))})
+                        a.update({re.sub(" \d{2}:\d{2}:\d{2}\.\d{6}\+00:00", "", str(status['created_at'])): order(z.group(1))})
                         json.dump(a, f)
                 except:
                     e_me()
@@ -1022,7 +1023,7 @@ class game():
             acc = status['account']
             if acc['acct'] != "1":
                 count.bals += 1
-                f = codecs.open('game\\bals.txt', 'w', 'utf-8')
+                f = codecs.open('bot\\game\\bals.txt', 'w', 'utf-8')
                 f.write(str(count.bals))
                 f.close
                 post = "[large=2x][color=red]目がぁぁぁ、目がぁぁぁ！x" + str(count.bals) + "[/color][/large]"
@@ -1052,11 +1053,11 @@ class Loading():
     def go_local():  # listenerオブジェクトには監視させるものを（続く）
         try:
             listener = Local()
-            mastodon.local_stream(listener)
+            mastodon.stream_local(listener)
         except:
             print("【例外情報】\n" + traceback.format_exc())
             with open('except.log', 'a') as f:
-                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                jst_now = datetime.now(JST)
                 f.write("\n\n【LOCAL_ERROR: " + str(jst_now) + "】\n")
                 traceback.print_exc(file=f)
                 f.write("\n")
@@ -1068,11 +1069,11 @@ class Loading():
     def go_user():  # （続き）継承で組み込んだものを追加するようにします。
         try:
             listener = User()
-            mastodon.user_stream(listener)
+            mastodon.stream_user(listener)
         except:
             print("【例外情報】\n" + traceback.format_exc())
             with open('except.log', 'a') as f:
-                jst_now = datetime.now(timezone('Asia/Tokyo'))
+                jst_now = datetime.now(JST)
                 f.write("\n\n【USER_ERROR: " + str(jst_now) + "】\n")
                 traceback.print_exc(file=f)
                 f.write("\n")
@@ -1127,32 +1128,23 @@ def e_stream(tl):
         f.white("\n")
 
 
+def stream_init():
+    try:
+        uuu = threading.Timer(0, Loading.go_local)
+        lll = threading.Timer(0, Loading.go_user)
+        uuu.start()
+        lll.start()
+    except:
+        e_me()
+        sleep(3)
+        bot.toot("すみません、ログアウトするかもしれません。")
+
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
-    setup0()
     k = input("start: ")
-    main(k)
-else:
-    pass
-
-
-def main(k):
-    def stream_init():
-        try:
-            uuu = threading.Timer(0, Loading.go_local)
-            lll = threading.Timer(0, Loading.go_user)
-            uuu.start()
-            lll.start()
-        except:
-            e_me()
-            sleep(3)
-            bot.toot("すみません、ログアウトするかもしれません。")
-
-
-    api_Bot = open("api_Bot.txt").read()
+    api_Bot = open("bot\\api_Bot.txt").read()
     count()
     stream_init = stream_init()
     s = threading.Thread(target=stream_init)
-    s.start()
     if k is "":
         bot.toot("ログインしました。")
     elif k is "2":
@@ -1161,5 +1153,5 @@ def main(k):
         bot.toot("ただいまテスト中です。")
     if k is "":
         back01()
-    s.join()
+    s.start()
     print('Stream、正常です。')
