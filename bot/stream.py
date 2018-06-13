@@ -2,7 +2,7 @@ from mastodon import *
 from time import time, sleep
 import re, sys, os, csv, json, codecs, io, gc
 import threading, requests, random, feedparser
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 import warnings, traceback, janome
 from xml.sax.saxutils import unescape as unesc
 from dateutil import tz
