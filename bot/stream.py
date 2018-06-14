@@ -100,7 +100,7 @@ class User(StreamListener):  # ホームでフォローした人と通知を監�
                 if account["acct"] == "Knzk":
                     count.knzk_fav += 1
                     print("神崎にふぁぼられた数:" + str(count.knzk_fav))
-                    if count.knzk_fav == 10:
+                    if count.knzk_fav == 100:
                         f = codecs.open('bot\\bot\\res\\fav_knzk.txt', 'r', 'utf-8')
                         l = []
                         for x in f:
