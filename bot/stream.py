@@ -343,9 +343,20 @@ class res():
     def res04(status):  # こおりちゃん式挨拶機能の実装
         account = status["account"]
         content = re.sub("<p>|</p>", "", str(status['content']))
+        xxx = "[(（].+[)）]|@[a-zA-Z0-9_]+|\s|＠.+|:"
         try:
             with codecs.open('data\\dic_time\\adana\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
                 display_name = f.read()
+            if re.compile("^[ -/　-】:-\?\[-`\{-~]+$").search(name):
+                if account['display_name'] == "":
+                    display_name = account['acct']
+                else:
+                    display_name = re.sub(xxx, "", account['display_name'])
+            elif name == "":
+                if account['display_name'] == "":
+                    display_name = account['acct']
+                else:
+                    display_name = re.sub(xxx, "", account['display_name'])
         except:
             if account['display_name'] == "":
                 display_name = account['acct'] + "さん"
