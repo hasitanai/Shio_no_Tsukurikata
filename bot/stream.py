@@ -349,19 +349,19 @@ class res():
                 display_name = f.read()
             if re.compile("^[ -/　-】:-\?\[-`\{-~]+$").search(name):
                 if account['display_name'] == "":
-                    display_name = account['acct']
+                    display_name = account['acct'] + "さん"
                 else:
-                    display_name = re.sub(xxx, "", account['display_name'])
+                    display_name = re.sub(xxx, "", account['display_name']) + "さん"
             elif name == "":
                 if account['display_name'] == "":
-                    display_name = account['acct']
+                    display_name = account['acct'] + "さん"
                 else:
-                    display_name = re.sub(xxx, "", account['display_name'])
+                    display_name = re.sub(xxx, "", account['display_name']) + "さん"
         except:
             if account['display_name'] == "":
                 display_name = account['acct'] + "さん"
             else:
-                display_name = re.sub("@[a-zA-Z0-9]+|\s", "", account['display_name']) + "さん"
+                display_name = = re.sub(xxx, "", account['display_name']) + "さん"
         try:
             if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
                 try:
