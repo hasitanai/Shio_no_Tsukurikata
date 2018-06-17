@@ -481,7 +481,7 @@ class res():
                 # 記憶させる装置
                 # ad = re.search("こおり.*(ノルマ|minder|マインダー|伝言)「(.+)」", content)
                 # adan = ad.group(1)
-                # with codecs.open('data\\dic_time\\adana\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
+                # with codecs.open('data\\dic_time\\minder\\' + account["acct"] + '.txt', 'w', 'UTF-8') as f:
                 #    f.write(adan)
                 # 教えるするようにする装置
                 # お知らせするようにする装置
