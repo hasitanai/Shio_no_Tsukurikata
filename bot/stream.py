@@ -512,7 +512,7 @@ class res():
     def fav01(status):  # 自分の名前があったらニコブーして、神崎があったらニコります。
         account = status["account"]
         if account["acct"] != "1":  # 自分以外
-            if re.compile("こおり|(神[埼崎]|knzk|(100|5000兆)db)").search(status['content']):
+            if re.compile("こおり|(神[埼崎]|knzk|(100|5000兆)db)|うりずん").search(status['content']):
                 v = threading.Timer(1, bot.fav_now, [status])
                 v.start()
             else:
