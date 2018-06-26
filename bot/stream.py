@@ -347,12 +347,12 @@ class res():
         try:
             with codecs.open('data\\dic_time\\adana\\' + account["acct"] + '.txt', 'r', 'UTF-8') as f:
                 display_name = f.read()
-            if re.compile("^[ -/　-】:-\?\[-`\{-~]+$").search(name):
+            if re.compile("^[ -/　-】:-\?\[-`\{-~]+$").search(display_name):
                 if account['display_name'] == "":
                     display_name = account['acct'] + "さん"
                 else:
                     display_name = re.sub(xxx, "", account['display_name']) + "さん"
-            elif name == "":
+            elif display_name == "":
                 if account['display_name'] == "":
                     display_name = account['acct'] + "さん"
                 else:
@@ -361,7 +361,7 @@ class res():
             if account['display_name'] == "":
                 display_name = account['acct'] + "さん"
             else:
-                display_name = = re.sub(xxx, "", account['display_name']) + "さん"
+                display_name = re.sub(xxx, "", account['display_name']) + "さん"
         try:
             if account["acct"] != "1":  # 一人遊びで挨拶しないようにするための処置
                 try:
