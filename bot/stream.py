@@ -421,8 +421,12 @@ class res():
                         last_time = f.read()
                     last_time = conv.delta(last_time)
                     now_time = status['created_at']  # \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d{6}+00:00
+                    print(now_time)
+                    print(last_time)
                     last_time.replace(tzinfo=tz.tzutc()).astimezone(JST)
                     now_time.replace(tzinfo=tz.tzutc()).astimezone(JST)
+                    print(now_time)
+                    print(last_time)
                     delta = now_time - last_time
                     if delta.total_seconds() >= 604800:
                         to_r = conv.rand_w('bot\\time\\ohisa.txt')
