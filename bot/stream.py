@@ -795,35 +795,25 @@ class game():
         #    dedededen
         pass
 
+class ready():
+    def __init__(self): pass
 
-class Loading():
+    def go(self):
+        count.timer_hello = 1
+
+    def stop(self):
+        count.timer_hello = 0
+        
     def deco(func):
         import functools
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             f = func(*args, **kwargs)
             print("Streaming開始です【{}】".format(f))
-
         return wrapper
-
+    
     @deco
-    def go_local():  # listenerオブジェクトには監視させるものを（続く）
-        try:
-            listener = Local()
-            mastodon.stream_local(listener)
-        except:
-            print("【例外情報】\n" + traceback.format_exc())
-            with open('except.log', 'a') as f:
-                jst_now = datetime.now(JST)
-                f.write("\n\n【LOCAL_ERROR: " + str(jst_now) + "】\n")
-                traceback.print_exc(file=f)
-                f.write("\n")
-            sleep(180)
-            Loading.re_local()
-            pass
-
-    @deco
-    def go_user():  # （続き）継承で組み込んだものを追加するようにします。
+    def user(self):
         try:
             listener = User()
             mastodon.stream_user(listener)
@@ -835,26 +825,24 @@ class Loading():
                 traceback.print_exc(file=f)
                 f.write("\n")
             sleep(180)
-            Loading.re_user()
+            self.user()
             pass
-
-    def re_local():
-        relogin()
-        uuu = threading.Thread(target=Loading.go_local)
-        uuu.start()
-        uuu.join()
-        toot.toot(mastodon, "@0 ローカル、読み込み直しました", "direct")
-
-    def re_user():
-        relogin()
-        lll = threading.Thread(target=Loading.go_user)
-        lll.start()
-        lll.join()
-        toot.toot(mastodon, "@0 ホーム及び通知、読み込み直しました。", "direct")
-
-
-def reload():
-    pass
+    
+    @deco
+    def local(self):
+        try:
+            listener = Local()
+            mastodon.stream_local(listener)
+        except:
+            print("【例外情報】\n" + traceback.format_exc())
+            with open('except.log', 'a') as f:
+                jst_now = datetime.now(JST)
+                f.write("\n\n【LOCAL_ERROR: " + str(jst_now) + "】\n")
+                traceback.print_exc(file=f)
+                f.write("\n")
+            sleep(180)
+            self.local()
+            pass
 
 
 def relogin():
@@ -896,8 +884,8 @@ else:
 def main(k):
     def stream_init():
         try:
-            uuu = threading.Timer(0, Loading.go_local)
-            lll = threading.Timer(0, Loading.go_user)
+            uuu = threading.Timer(0, ready.user)
+            lll = threading.Timer(0, ready.local)
             uuu.start()
             lll.start()
         except:
@@ -913,10 +901,14 @@ def main(k):
     s.start()
     if k is "":
         toot.toot(mastodon, "ログインしました。")
+    elif k is "1":
+        pass
     elif k is "2":
         toot.toot(mastodon, "再起動しました。")
     elif k is "3":
         toot.toot(mastodon, "ただいまテスト中です。")
+    elif k is "4":
+        toot.toot(mastodon, "ログインしました、謹慎中です。")
     if k is "":
         back01()
     s.join()
