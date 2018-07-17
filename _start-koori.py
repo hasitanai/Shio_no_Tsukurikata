@@ -25,6 +25,5 @@ if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
         api_base_url=url_ins)  # インスタンス
     k = input("start: ")
     import bot
-    bot.stream.setup1(mastodon, k)
-    bot.stream.main(k)
+    bot.stream.main(mastodon,k)
     print("こおり「ログイン、完了しました」")
