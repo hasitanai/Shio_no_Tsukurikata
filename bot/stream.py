@@ -15,32 +15,6 @@ mastodon = None
 k = "1"
 JST = timezone(timedelta(hours=+9), 'JST')
 
-def setup0():
-    global mastodon
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
-                                  encoding=sys.stdout.encoding,
-                                  errors='backslashreplace',
-                                  line_buffering=sys.stdout.line_buffering)
-
-    # これはよく分かってない
-    warnings.simplefilter("ignore", UnicodeWarning)
-
-    url_ins = open("login\\instance.txt").read()  # instanceのアドレス　例：https://knzk.me
-
-    mastodon = Mastodon(
-        client_id="login\\cred.txt",
-        access_token="login\\auth.txt",
-        api_base_url=url_ins)  # インスタンス
-
-    print("こおり「ログイン、完了しました。」")
-
-
-def setup1(api, t):
-    global mastodon
-    global k
-    mastodon = api
-    k = t
-
 
 def back01():
     print("---timeline遡りチェックテスト---")
@@ -874,14 +848,21 @@ def e_stream(tl):
 
 
 if __name__ == '__main__':  # ファイルから直接開いたら動くよ！
-    setup0()
+    url_ins = open("login\\instance.txt").read()
+    # instanceのアドレス　例：https://knzk.me
+    mastodon = Mastodon(
+        client_id="login\\cred.txt",
+        access_token="login\\auth.txt",
+        api_base_url=url_ins)  # インスタンス
     k = input("start: ")
-    main(k)
+    main(mastodon,k)
 else:
     pass
 
 
-def main(k):
+def main(token,k):
+    global mastodon
+    mastodon = token
     def stream_init():
         try:
             uuu = threading.Timer(0, ready.user)
@@ -892,8 +873,6 @@ def main(k):
             e_me()
             sleep(3)
             toot.toot(mastodon, "すみません、ログアウトするかもしれません。")
-
-
     api_Bot = open("bot\\api_Bot.txt").read()
     count()
     stream_init = stream_init()
