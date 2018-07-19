@@ -770,14 +770,6 @@ class game():
         pass
 
 class ready():
-    def __init__(self): pass
-
-    def go(self):
-        count.timer_hello = 1
-
-    def stop(self):
-        count.timer_hello = 0
-        
     def deco(func):
         import functools
         @functools.wraps(func)
@@ -787,7 +779,7 @@ class ready():
         return wrapper
     
     @deco
-    def user(self):
+    def user():
         try:
             listener = User()
             mastodon.stream_user(listener)
@@ -799,11 +791,11 @@ class ready():
                 traceback.print_exc(file=f)
                 f.write("\n")
             sleep(180)
-            self.user()
+            ready.user()
             pass
     
     @deco
-    def local(self):
+    def local():
         try:
             listener = Local()
             mastodon.stream_local(listener)
@@ -815,9 +807,8 @@ class ready():
                 traceback.print_exc(file=f)
                 f.write("\n")
             sleep(180)
-            self.local()
+            ready.local()
             pass
-
 
 def relogin():
     mastodon = Mastodon(
